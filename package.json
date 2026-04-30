@@ -4,12 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --mode development",
-    "dev:local": "vite --mode development",
+    "dev": "vite --mode localdev",
+    "dev:local": "vite --mode localdev",
+    "dev:dev": "vite --mode development",
+    "dev:prod": "vite --mode production",
     "build": "tsc -b && vite build --mode production",
+    "build:local": "tsc -b && vite build --mode localdev",
     "build:dev": "tsc -b && vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview --mode production",
+    "preview:local": "vite preview --mode localdev",
+    "preview:dev": "vite preview --mode development"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -34,7 +39,6 @@
     "globals": "^17.5.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.10",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite": "^8.0.10"
   }
 }

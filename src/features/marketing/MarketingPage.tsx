@@ -1,6 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { marketingApi, productsApi, setupApi } from '@/shared/api/catalog-api';
-import type { ProductCollection, SearchRedirect, SearchSynonym, SeoLandingPage } from '@/shared/api/types';
+import type {
+  CatalogBootstrap,
+  ProductCollection,
+  ProductCollectionDetail,
+  SearchRedirect,
+  SearchSynonym,
+  SeoLandingPage,
+} from '@/shared/api/types';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/ui/Fields';
@@ -36,24 +44,29 @@ export function MarketingPage() {
 }
 
 function CollectionsManager() {
-  const bootstrapQuery = useMemo(() => setupApi.bootstrap, []);
   const [selectedId, setSelectedId] = useState('');
-  const collectionsQuery = useMemo(() => marketingApi.collections, []);
-  const productsList = useMemo(() => productsApi.list, []);
+  const bootstrapQuery = useQuery({
+    queryKey: ['catalog-bootstrap'],
+    queryFn: setupApi.bootstrap,
+  });
+  const productsQuery = useQuery({
+    queryKey: ['products-selector'],
+    queryFn: () => productsApi.list({ page: 1, pageSize: 100, includeInactive: true, search: '' }),
+  });
 
   return (
     <ResourceManager<ProductCollection, Record<string, unknown>>
       queryKey="collections"
       title="Подборки"
       description="Ручные или сезонные витрины. Список товаров внутри можно редактировать прямо здесь."
-      list={collectionsQuery.list}
+      list={marketingApi.collections.list}
       getById={async (id) => {
         setSelectedId(id);
-        return (await collectionsQuery.getDetail(id)).collection;
+        return (await marketingApi.collections.getDetail(id)).collection;
       }}
-      create={collectionsQuery.create}
-      update={collectionsQuery.update}
-      remove={collectionsQuery.remove}
+      create={marketingApi.collections.create}
+      update={marketingApi.collections.update}
+      remove={marketingApi.collections.remove}
       toForm={(entity) => ({
         name: entity?.name ?? '',
         slug: entity?.slug ?? '',
@@ -76,7 +89,14 @@ function CollectionsManager() {
         </>
       )}
       renderForm={(form, setForm) => (
-        <CollectionForm form={form} setForm={setForm} selectedId={selectedId} getCollectionDetail={collectionsQuery.getDetail} getProducts={productsList} bootstrap={bootstrapQuery} />
+        <CollectionForm
+          form={form}
+          setForm={setForm}
+          selectedId={selectedId}
+          bootstrapData={bootstrapQuery.data}
+          collectionDetailQuery={marketingApi.collections.getDetail}
+          productOptions={productsQuery.data?.items.map((item) => ({ value: item.id, label: item.name })) ?? []}
+        />
       )}
     />
   );
@@ -86,42 +106,36 @@ function CollectionForm({
   form,
   setForm,
   selectedId,
-  getCollectionDetail,
-  getProducts,
-  bootstrap,
+  collectionDetailQuery,
+  bootstrapData,
+  productOptions,
 }: {
   form: Record<string, unknown>;
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
   selectedId: string;
-  getCollectionDetail: (id: string) => Promise<{ collection: ProductCollection; items: Array<Record<string, unknown>> }>;
-  getProducts: typeof productsApi.list;
-  bootstrap: typeof setupApi.bootstrap;
+  collectionDetailQuery: (id: string) => Promise<ProductCollectionDetail>;
+  bootstrapData?: CatalogBootstrap;
+  productOptions: Array<{ value: string; label: string }>;
 }) {
-  const [loadedId, setLoadedId] = useState('');
-  const [productOptions, setProductOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const detailQuery = useQuery({
+    queryKey: ['collection-detail-items', selectedId],
+    queryFn: () => collectionDetailQuery(selectedId),
+    enabled: Boolean(selectedId),
+  });
 
-  if (selectedId && selectedId !== loadedId) {
-    void getCollectionDetail(selectedId).then((detail) => {
-      setForm((prev) => ({
-        ...prev,
-        items: detail.items.map((item) => ({
-          id: item.id,
-          productId: item.productId,
-          sortOrder: item.sortOrder,
-          isActive: item.isActive,
-        })),
-      }));
-      setLoadedId(selectedId);
-    });
-  }
+  useEffect(() => {
+    if (!detailQuery.data) return;
 
-  if (productOptions.length === 0) {
-    void getProducts({ page: 1, pageSize: 100, includeInactive: true, search: '' }).then((response) => {
-      setProductOptions(response.items.map((item) => ({ value: item.id, label: item.name })));
-    });
-  }
-
-  void bootstrap();
+    setForm((prev) => ({
+      ...prev,
+      items: detailQuery.data.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        sortOrder: item.sortOrder,
+        isActive: item.isActive,
+      })),
+    }));
+  }, [detailQuery.data, setForm]);
 
   const items = Array.isArray(form.items) ? (form.items as Array<Record<string, unknown>>) : [];
 
@@ -142,6 +156,11 @@ function CollectionForm({
       <TextAreaField className="field-span-2" label="SEO text" rows={5} value={String(form.seoText ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, seoText: event.target.value }))} />
       <CheckboxField label="Индексировать подборку" checked={Boolean(form.isIndexable)} onChange={(value) => setForm((prev) => ({ ...prev, isIndexable: value }))} />
       <CheckboxField label="Активна" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
+      {bootstrapData && (
+        <div className="field-span-2 empty-inline">
+          Доступно категорий: {bootstrapData.categories.length}, подборок: {bootstrapData.collections.length}
+        </div>
+      )}
 
       <div className="field-span-2">
         <Card title="Товары внутри подборки" className="inner-card">
@@ -187,7 +206,10 @@ function CollectionForm({
 }
 
 function SeoManager() {
-  const bootstrapQuery = useMemo(() => setupApi.bootstrap, []);
+  const bootstrapQuery = useQuery({
+    queryKey: ['catalog-bootstrap'],
+    queryFn: setupApi.bootstrap,
+  });
 
   return (
     <ResourceManager<SeoLandingPage, Record<string, unknown>>
@@ -223,7 +245,7 @@ function SeoManager() {
           </span>
         </>
       )}
-      renderForm={(form, setForm) => <SeoForm form={form} setForm={setForm} bootstrap={bootstrapQuery} />}
+      renderForm={(form, setForm) => <SeoForm form={form} setForm={setForm} bootstrapData={bootstrapQuery.data} />}
     />
   );
 }
@@ -231,18 +253,12 @@ function SeoManager() {
 function SeoForm({
   form,
   setForm,
-  bootstrap,
+  bootstrapData,
 }: {
   form: Record<string, unknown>;
   setForm: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
-  bootstrap: typeof setupApi.bootstrap;
+  bootstrapData?: CatalogBootstrap;
 }) {
-  const [bootstrapData, setBootstrapData] = useState<Awaited<ReturnType<typeof setupApi.bootstrap>> | null>(null);
-
-  if (!bootstrapData) {
-    void bootstrap().then(setBootstrapData);
-  }
-
   const categories = flattenCategoryOptions(bootstrapData?.categories ?? []);
 
   return (

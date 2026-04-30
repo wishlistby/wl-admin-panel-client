@@ -2,7 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { productsApi, setupApi } from '@/shared/api/catalog-api';
-import type { CatalogProductEditor } from '@/shared/api/types';
+import type {
+  CatalogProductEditor,
+  ProductAttributeValue,
+  ProductCollectionItem,
+  ProductMedia,
+  ProductPrice,
+  ProductRelation,
+  ProductTag,
+  ProductVariant,
+  VariantAttributeValue,
+} from '@/shared/api/types';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/ui/Fields';
@@ -247,18 +257,18 @@ export function ProductsPage() {
             <Card title="Атрибуты товара" description="Общие свойства карточки, которые не меняются между SKU.">
               <AttributeEditor
                 items={state.productAttributes}
-                onChange={(items) => setState((prev) => ({ ...prev, productAttributes: items as ProductAttributeValue[] }))}
+                onChange={(items) => setState((prev) => ({ ...prev, productAttributes: items }))}
                 definitions={attributeDefinitions}
                 scope="product"
               />
             </Card>
             <Card title="Медиа карточки" description="Общие изображения и файлы товара.">
-              <MediaEditor items={state.productMedia} onChange={(items) => setState((prev) => ({ ...prev, productMedia: items as ProductMedia[] }))} />
+              <MediaEditor items={state.productMedia} onChange={(items) => setState((prev) => ({ ...prev, productMedia: items }))} />
             </Card>
             <Card title="Цены карточки" description="Используй только если цена задаётся на уровне всей карточки, а не SKU.">
               <PriceEditor
                 items={state.productPrices}
-                onChange={(items) => setState((prev) => ({ ...prev, productPrices: items as ProductPrice[] }))}
+                onChange={(items) => setState((prev) => ({ ...prev, productPrices: items }))}
                 priceLists={bootstrapQuery.data?.priceLists ?? []}
               />
             </Card>
@@ -287,13 +297,13 @@ export function ProductsPage() {
                 }
               >
                 <div className="form-grid form-grid-3">
-                  <TextField label="Название SKU" value={variant.name} onChange={(event) => updateVariant(index, { name: event.target.value }, setState)} />
-                  <TextField label="SKU" value={variant.sku} onChange={(event) => updateVariant(index, { sku: event.target.value }, setState)} />
-                  <TextField label="Barcode" value={variant.barcode} onChange={(event) => updateVariant(index, { barcode: event.target.value }, setState)} />
-                  <TextField label="Slug" value={variant.slug} onChange={(event) => updateVariant(index, { slug: event.target.value }, setState)} />
+                  <TextField label="Название SKU" value={String(variant.name ?? '')} onChange={(event) => updateVariant(index, { name: event.target.value }, setState)} />
+                  <TextField label="SKU" value={String(variant.sku ?? '')} onChange={(event) => updateVariant(index, { sku: event.target.value }, setState)} />
+                  <TextField label="Barcode" value={String(variant.barcode ?? '')} onChange={(event) => updateVariant(index, { barcode: event.target.value }, setState)} />
+                  <TextField label="Slug" value={String(variant.slug ?? '')} onChange={(event) => updateVariant(index, { slug: event.target.value }, setState)} />
                   <TextField label="Price" type="number" value={String(variant.price)} onChange={(event) => updateVariant(index, { price: Number(event.target.value) }, setState)} />
                   <TextField label="Old price" type="number" value={String(variant.oldPrice ?? '')} onChange={(event) => updateVariant(index, { oldPrice: Number(event.target.value) || null }, setState)} />
-                  <TextField label="Currency" value={variant.currency} onChange={(event) => updateVariant(index, { currency: event.target.value.toUpperCase() }, setState)} />
+                  <TextField label="Currency" value={String(variant.currency ?? '')} onChange={(event) => updateVariant(index, { currency: event.target.value.toUpperCase() }, setState)} />
                   <TextField label="Stock quantity" type="number" value={String(variant.stockQuantity)} onChange={(event) => updateVariant(index, { stockQuantity: Number(event.target.value) }, setState)} />
                   <TextField label="Weight" type="number" value={String(variant.weight ?? '')} onChange={(event) => updateVariant(index, { weight: Number(event.target.value) || null }, setState)} />
                   <TextField label="Width" type="number" value={String(variant.width ?? '')} onChange={(event) => updateVariant(index, { width: Number(event.target.value) || null }, setState)} />
@@ -475,8 +485,8 @@ function AttributeEditor({
   definitions,
   scope,
 }: {
-  items: Array<ProductAttributeValue | VariantAttributeValue | Record<string, unknown>>;
-  onChange: (items: Array<Record<string, unknown>>) => void;
+  items: DraftRecord[];
+  onChange: (items: DraftRecord[]) => void;
   definitions: Array<{ id: string; name: string; dataType: string; options: Array<{ id: string; value: string }>; groupName: string }>;
   scope: 'product' | 'variant';
 }) {
@@ -492,11 +502,11 @@ function AttributeEditor({
               label="Атрибут"
               value={String(item.attributeDefinitionId ?? '')}
               onChange={(event) =>
-                onChange(
-                  items.map((entry, current) =>
-                    current === index
-                      ? {
-                          ...entry,
+            onChange(
+              items.map((entry, current) =>
+                current === index
+                  ? {
+                      ...entry,
                           attributeDefinitionId: event.target.value,
                           attributeOptionId: null,
                           valueText: '',
@@ -597,7 +607,7 @@ function AttributeEditor({
   );
 }
 
-function MediaEditor({ items, onChange }: { items: ProductMedia[]; onChange: (items: ProductMedia[]) => void }) {
+function MediaEditor({ items, onChange }: { items: DraftRecord[]; onChange: (items: DraftRecord[]) => void }) {
   return (
     <div className="stack-list compact">
       {items.map((item, index) => (
@@ -626,8 +636,8 @@ function PriceEditor({
   onChange,
   priceLists,
 }: {
-  items: ProductPrice[];
-  onChange: (items: ProductPrice[]) => void;
+  items: DraftRecord[];
+  onChange: (items: DraftRecord[]) => void;
   priceLists: Array<{ id: string; name: string; currency: string }>;
 }) {
   return (
@@ -648,7 +658,7 @@ function PriceEditor({
           <TextField label="Валюта" value={item.currency} onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, currency: event.target.value.toUpperCase() } : entry)))} />
         </div>
       ))}
-      <Button variant="secondary" onClick={() => onChange([...items, { id: crypto.randomUUID(), priceListId: '', price: 0, oldPrice: null, currency: 'RUB', isActive: true, startDate: '', lastUpdate: '' } as ProductPrice])}>
+      <Button variant="secondary" onClick={() => onChange([...items, { id: crypto.randomUUID(), priceListId: '', price: 0, oldPrice: null, currency: 'RUB', isActive: true, startDate: '', lastUpdate: '' }])}>
         Добавить цену
       </Button>
     </div>
@@ -705,20 +715,13 @@ function createEmptyProductState() {
       isActive: true,
     },
     categories: [] as Array<{ id: string; catalogCategoryId: string; isPrimary: boolean; sortOrder: number; isActive: boolean }>,
-    productAttributes: [] as Array<ProductAttributeValue>,
-    productMedia: [] as Array<ProductMedia>,
-    productPrices: [] as Array<ProductPrice>,
-    tags: [] as Array<ProductTag>,
-    collections: [] as Array<ProductCollectionItem>,
-    relations: [] as Array<ProductRelation>,
-    variants: [] as Array<
-      ProductVariant & {
-        attributes: VariantAttributeValue[];
-        inventoryStocks: Array<{ id: string; warehouseId: string; quantity: number; reservedQuantity: number; availableQuantity: number; isActive: boolean }>;
-        prices: ProductPrice[];
-        media: ProductMedia[];
-      }
-    >,
+    productAttributes: [] as DraftRecord[],
+    productMedia: [] as DraftRecord[],
+    productPrices: [] as DraftRecord[],
+    tags: [] as DraftRecord[],
+    collections: [] as DraftRecord[],
+    relations: [] as DraftRecord[],
+    variants: [] as DraftRecord[],
   };
 }
 
@@ -744,18 +747,18 @@ function mapEditorToState(editor: CatalogProductEditor): EditorState {
       sortOrder: item.sortOrder,
       isActive: item.isActive,
     })),
-    productAttributes: editor.productAttributes,
-    productMedia: editor.productMedia,
-    productPrices: editor.productPrices,
-    tags: editor.tags,
-    collections: editor.collections,
-    relations: editor.relations,
+    productAttributes: editor.productAttributes as DraftRecord[],
+    productMedia: editor.productMedia as DraftRecord[],
+    productPrices: editor.productPrices as DraftRecord[],
+    tags: editor.tags as DraftRecord[],
+    collections: editor.collections as DraftRecord[],
+    relations: editor.relations as DraftRecord[],
     variants: editor.variants.map((item) => ({
       ...item.variant,
-      attributes: item.attributes,
-      inventoryStocks: item.inventoryStocks,
-      prices: item.prices,
-      media: item.media,
+      attributes: item.attributes as DraftRecord[],
+      inventoryStocks: item.inventoryStocks as DraftRecord[],
+      prices: item.prices as DraftRecord[],
+      media: item.media as DraftRecord[],
     })),
   };
 }
@@ -817,7 +820,7 @@ function toSaveRequest(state: EditorState) {
       isAvailable: item.isAvailable,
       isActive: item.isActive,
       attributes: item.attributes.map(cleanAttribute),
-      inventoryStocks: item.inventoryStocks.map((stock) => ({
+      inventoryStocks: item.inventoryStocks.map((stock: { id: string; warehouseId: string; quantity: number; reservedQuantity: number; availableQuantity: number; isActive: boolean }) => ({
         id: stock.id,
         warehouseId: stock.warehouseId,
         quantity: Number(stock.quantity) || 0,
@@ -831,7 +834,7 @@ function toSaveRequest(state: EditorState) {
   };
 }
 
-function cleanAttribute(item: Record<string, unknown>) {
+function cleanAttribute(item: DraftRecord) {
   return {
     id: item.id,
     attributeDefinitionId: item.attributeDefinitionId,
@@ -845,7 +848,7 @@ function cleanAttribute(item: Record<string, unknown>) {
   };
 }
 
-function cleanMedia(item: ProductMedia) {
+function cleanMedia(item: DraftRecord) {
   return {
     id: item.id,
     productVariantId: item.productVariantId || null,
@@ -859,7 +862,7 @@ function cleanMedia(item: ProductMedia) {
   };
 }
 
-function cleanPrice(item: ProductPrice) {
+function cleanPrice(item: DraftRecord) {
   return {
     id: item.id,
     productVariantId: item.productVariantId || null,

@@ -2,6 +2,10 @@ import { env } from '@/shared/config/env';
 import type { ApiResponse } from '@/shared/api/types';
 
 async function parseResponse<T>(response: Response): Promise<T> {
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   const payload = (await response.json()) as ApiResponse<T>;
 
   if (!response.ok || payload.error) {
@@ -12,11 +16,16 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export async function http<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const hasBody = init?.body !== undefined && init?.body !== null;
+
+  if (hasBody && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const response = await fetch(`${env.apiBaseUrl}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
+    headers,
     ...init,
   });
 

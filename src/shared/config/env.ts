@@ -1,5 +1,5 @@
-const appEnv = import.meta.env.VITE_APP_ENV ?? 'development';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
+const appEnv = import.meta.env.VITE_APP_ENV ?? 'local';
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:6061').replace(/\/+$/, '');
 
 const labels: Record<string, string> = {
   local: 'Local environment',
