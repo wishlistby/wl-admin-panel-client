@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { setupApi, structureApi } from '@/shared/api/catalog-api';
+import { attributeDataTypeEnum, attributeDataTypeValues } from '@/shared/api/catalog-enums';
 import type { CatalogCategoryNode } from '@/shared/api/types';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -40,6 +41,7 @@ export function StructurePage() {
 
 function CategoryStudio() {
   const queryClient = useQueryClient();
+  const bootstrapQuery = useQuery({ queryKey: ['catalog-bootstrap'], queryFn: setupApi.bootstrap });
   const categoriesQuery = useQuery({ queryKey: ['categories-tree'], queryFn: structureApi.categories.tree });
   const [selected, setSelected] = useState<CatalogCategoryNode | null>(null);
   const [form, setForm] = useState({
@@ -57,10 +59,12 @@ function CategoryStudio() {
     canonicalUrl: '',
     isActive: true,
     propagateVisibility: false,
+    attributes: [] as Array<Record<string, unknown>>,
   });
 
   useEffect(() => {
     if (!selected) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm({
       parentId: selected.parentId ?? '',
       name: selected.name,
@@ -76,6 +80,7 @@ function CategoryStudio() {
       canonicalUrl: '',
       isActive: selected.isActive,
       propagateVisibility: false,
+      attributes: [],
     });
   }, [selected]);
 
@@ -87,6 +92,7 @@ function CategoryStudio() {
 
   useEffect(() => {
     if (!detailQuery.data) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm((prev) => ({
       ...prev,
       metaTitle: detailQuery.data.category.metaTitle ?? '',
@@ -96,6 +102,15 @@ function CategoryStudio() {
       canonicalUrl: detailQuery.data.category.canonicalUrl ?? '',
       isIndexable: detailQuery.data.category.isIndexable,
       isActive: detailQuery.data.category.isActive,
+      attributes: detailQuery.data.attributes.map((attribute) => ({
+        id: attribute.id,
+        attributeDefinitionId: attribute.attributeDefinitionId,
+        isVisibleInFilter: attribute.isVisibleInFilter,
+        isExpandedByDefault: attribute.isExpandedByDefault,
+        isSeoRelevant: attribute.isSeoRelevant,
+        sortOrder: attribute.sortOrder,
+        isActive: attribute.isActive,
+      })),
     }));
   }, [detailQuery.data]);
 
@@ -121,6 +136,7 @@ function CategoryStudio() {
 
       if (selected?.id) {
         await structureApi.categories.update(selected.id, payload);
+        await structureApi.categories.replaceAttributes(selected.id, form.attributes);
 
         if (form.propagateVisibility) {
           const descendants = getDescendants(categoriesQuery.data ?? [], selected.id);
@@ -145,7 +161,8 @@ function CategoryStudio() {
           );
         }
       } else {
-        await structureApi.categories.create(payload);
+        const id = await structureApi.categories.create(payload);
+        await structureApi.categories.replaceAttributes(id, form.attributes);
       }
     },
     onSuccess: async () => {
@@ -181,6 +198,7 @@ function CategoryStudio() {
                 canonicalUrl: '',
                 isActive: true,
                 propagateVisibility: false,
+                attributes: [],
               });
             }}
           >
@@ -201,7 +219,15 @@ function CategoryStudio() {
         description="Редактор категории и SEO-контекста"
         actions={
           selected?.id ? (
-            <Button variant="danger" onClick={() => structureApi.categories.remove(selected.id).then(() => queryClient.invalidateQueries({ queryKey: ['categories-tree'] }))}>
+            <Button
+              variant="danger"
+              onClick={() =>
+                structureApi.categories.remove(selected.id).then(async () => {
+                  setSelected(null);
+                  await queryClient.invalidateQueries({ queryKey: ['categories-tree'] });
+                })
+              }
+            >
               Удалить
             </Button>
           ) : null
@@ -244,14 +270,118 @@ function CategoryStudio() {
 
         {detailQuery.data && (
           <Card title="Фильтры категории" description="Настройки фасетов для этой категории" className="inner-card">
-            <div className="chip-cloud">
-              {detailQuery.data.attributes.map((attribute) => (
-                <span key={attribute.id} className="chip">
-                  {attribute.attributeDefinitionId}
-                </span>
+            <div className="stack-list compact">
+              {form.attributes.map((attribute, index) => (
+                <div key={String(attribute.id ?? index)} className="matrix-row">
+                  <SelectField
+                    label="Атрибут"
+                    value={String(attribute.attributeDefinitionId ?? '')}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        attributes: prev.attributes.map((entry, current) =>
+                          current === index ? { ...entry, attributeDefinitionId: event.target.value } : entry,
+                        ),
+                      }))
+                    }
+                    options={[
+                      { value: '', label: 'Выбери атрибут' },
+                      ...(
+                        bootstrapQuery.data?.attributeGroups.flatMap((group) =>
+                          group.definitions.map((definition) => ({
+                            value: definition.definition.id,
+                            label: `${group.group.name} / ${definition.definition.name}`,
+                          })),
+                        ) ?? []
+                      ),
+                    ]}
+                  />
+                  <TextField
+                    label="Порядок"
+                    type="number"
+                    value={String(attribute.sortOrder ?? 0)}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        attributes: prev.attributes.map((entry, current) =>
+                          current === index ? { ...entry, sortOrder: Number(event.target.value) } : entry,
+                        ),
+                      }))
+                    }
+                  />
+                  <CheckboxField
+                    label="Показывать в фильтре"
+                    checked={Boolean(attribute.isVisibleInFilter)}
+                    onChange={(value) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        attributes: prev.attributes.map((entry, current) =>
+                          current === index ? { ...entry, isVisibleInFilter: value } : entry,
+                        ),
+                      }))
+                    }
+                  />
+                  <CheckboxField
+                    label="Раскрывать по умолчанию"
+                    checked={Boolean(attribute.isExpandedByDefault)}
+                    onChange={(value) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        attributes: prev.attributes.map((entry, current) =>
+                          current === index ? { ...entry, isExpandedByDefault: value } : entry,
+                        ),
+                      }))
+                    }
+                  />
+                  <CheckboxField
+                    label="SEO-relevant"
+                    checked={Boolean(attribute.isSeoRelevant)}
+                    onChange={(value) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        attributes: prev.attributes.map((entry, current) =>
+                          current === index ? { ...entry, isSeoRelevant: value } : entry,
+                        ),
+                      }))
+                    }
+                  />
+                  <Button
+                    variant="danger"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        attributes: prev.attributes.filter((_, current) => current !== index),
+                      }))
+                    }
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
               ))}
-              {detailQuery.data.attributes.length === 0 && <span className="empty-inline">Фильтры ещё не настроены.</span>}
+              {form.attributes.length === 0 && <span className="empty-inline">Фильтры ещё не настроены.</span>}
             </div>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  attributes: [
+                    ...prev.attributes,
+                    {
+                      id: crypto.randomUUID(),
+                      attributeDefinitionId: '',
+                      isVisibleInFilter: true,
+                      isExpandedByDefault: false,
+                      isSeoRelevant: false,
+                      sortOrder: prev.attributes.length + 1,
+                      isActive: true,
+                    },
+                  ],
+                }))
+              }
+            >
+              Добавить фильтр
+            </Button>
           </Card>
         )}
 
@@ -290,6 +420,7 @@ function ProductTypeStudio() {
 
   useEffect(() => {
     if (!detailQuery.data) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm({
       name: detailQuery.data.productType.name,
       slug: detailQuery.data.productType.slug,
@@ -367,6 +498,22 @@ function ProductTypeStudio() {
       </Card>
 
       <Card title="Редактор типа товара" description="Внутри сразу настраиваются обязательные атрибуты и фасетные правила.">
+        {selectedId && (
+          <div className="dialog-actions">
+            <Button
+              variant="danger"
+              onClick={() =>
+                structureApi.productTypes.remove(selectedId).then(async () => {
+                  setSelectedId('');
+                  setForm({ name: '', slug: '', description: '', isActive: true, attributes: [] });
+                  await queryClient.invalidateQueries({ queryKey: ['product-types-list'] });
+                })
+              }
+            >
+              Удалить тип
+            </Button>
+          </div>
+        )}
         <div className="form-grid form-grid-2">
           <TextField label="Название" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
           <TextField label="Slug" value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
@@ -428,6 +575,17 @@ function ProductTypeStudio() {
                     }))
                   }
                 />
+                <Button
+                  variant="danger"
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      attributes: prev.attributes.filter((_, current) => current !== index),
+                    }))
+                  }
+                >
+                  <Trash2 size={16} />
+                </Button>
               </div>
             ))}
           </div>
@@ -498,6 +656,7 @@ function AttributeStudio() {
 
   useEffect(() => {
     if (!groupDetailQuery.data) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGroupForm({
       name: groupDetailQuery.data.group.name,
       slug: groupDetailQuery.data.group.slug,
@@ -509,12 +668,13 @@ function AttributeStudio() {
 
   useEffect(() => {
     if (!definitionQuery.data) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDefinitionForm({
       attributeGroupId: definitionQuery.data.definition.attributeGroupId,
       code: definitionQuery.data.definition.code,
       name: definitionQuery.data.definition.name,
       description: definitionQuery.data.definition.description ?? '',
-      dataType: definitionQuery.data.definition.dataType,
+      dataType: attributeDataTypeEnum.fromApi(definitionQuery.data.definition.dataType),
       unit: definitionQuery.data.definition.unit ?? '',
       isFilterable: definitionQuery.data.definition.isFilterable,
       isSearchable: definitionQuery.data.definition.isSearchable,
@@ -555,7 +715,7 @@ function AttributeStudio() {
         code: definitionForm.code,
         name: definitionForm.name,
         description: definitionForm.description,
-        dataType: definitionForm.dataType,
+        dataType: attributeDataTypeEnum.toApi(definitionForm.dataType),
         unit: definitionForm.unit,
         isFilterable: definitionForm.isFilterable,
         isSearchable: definitionForm.isSearchable,
@@ -593,6 +753,33 @@ function AttributeStudio() {
             </button>
           ))}
         </div>
+        <div className="dialog-actions">
+          {selectedGroupId && (
+            <Button
+              variant="danger"
+              onClick={() =>
+                structureApi.attributeGroups.remove(selectedGroupId).then(async () => {
+                  setSelectedGroupId('');
+                  setSelectedDefinitionId('');
+                  setGroupForm({ name: '', slug: '', description: '', sortOrder: 0, isActive: true });
+                  await queryClient.invalidateQueries({ queryKey: ['attribute-groups-list'] });
+                })
+              }
+            >
+              Удалить группу
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setSelectedGroupId('');
+              setSelectedDefinitionId('');
+              setGroupForm({ name: '', slug: '', description: '', sortOrder: 0, isActive: true });
+            }}
+          >
+            Новая группа
+          </Button>
+        </div>
         <div className="form-grid">
           <TextField label="Название группы" value={groupForm.name} onChange={(event) => setGroupForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
           <TextField label="Slug" value={groupForm.slug} onChange={(event) => setGroupForm((prev) => ({ ...prev, slug: event.target.value }))} />
@@ -621,9 +808,48 @@ function AttributeStudio() {
             </button>
           ))}
         </div>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setSelectedDefinitionId('');
+            setDefinitionForm({
+              attributeGroupId: selectedGroupId,
+              code: '',
+              name: '',
+              description: '',
+              dataType: 'Text',
+              unit: '',
+              isFilterable: false,
+              isSearchable: false,
+              isComparable: false,
+              isVariantDefining: false,
+              isRequired: false,
+              sortOrder: 0,
+              isActive: true,
+              options: [],
+            });
+          }}
+        >
+          Новый атрибут
+        </Button>
       </Card>
 
       <Card title="Редактор атрибута" description="Тип данных, фильтры, variant-логика и options на одной панели.">
+        {selectedDefinitionId && (
+          <div className="dialog-actions">
+            <Button
+              variant="danger"
+              onClick={() =>
+                structureApi.attributeDefinitions.remove(selectedDefinitionId).then(async () => {
+                  setSelectedDefinitionId('');
+                  await queryClient.invalidateQueries({ queryKey: ['attribute-group-detail', selectedGroupId] });
+                })
+              }
+            >
+              Удалить атрибут
+            </Button>
+          </div>
+        )}
         <div className="form-grid">
           <SelectField
             label="Группа"
@@ -640,7 +866,7 @@ function AttributeStudio() {
             label="Тип данных"
             value={definitionForm.dataType}
             onChange={(event) => setDefinitionForm((prev) => ({ ...prev, dataType: event.target.value }))}
-            options={['Text', 'Number', 'Boolean', 'Date', 'Option', 'MultiOption', 'Json'].map((value) => ({ value, label: value }))}
+            options={attributeDataTypeValues.map((value) => ({ value, label: value }))}
           />
           <TextField label="Unit" value={definitionForm.unit} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, unit: event.target.value }))} />
           <TextField label="Sort order" type="number" value={String(definitionForm.sortOrder)} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) }))} />
@@ -682,6 +908,42 @@ function AttributeStudio() {
                       }))
                     }
                   />
+                  <TextField
+                    label="Порядок"
+                    type="number"
+                    value={String(item.sortOrder ?? 0)}
+                    onChange={(event) =>
+                      setDefinitionForm((prev) => ({
+                        ...prev,
+                        options: prev.options.map((entry, current) =>
+                          current === index ? { ...entry, sortOrder: Number(event.target.value) } : entry,
+                        ),
+                      }))
+                    }
+                  />
+                  <CheckboxField
+                    label="Активен"
+                    checked={Boolean(item.isActive)}
+                    onChange={(value) =>
+                      setDefinitionForm((prev) => ({
+                        ...prev,
+                        options: prev.options.map((entry, current) =>
+                          current === index ? { ...entry, isActive: value } : entry,
+                        ),
+                      }))
+                    }
+                  />
+                  <Button
+                    variant="danger"
+                    onClick={() =>
+                      setDefinitionForm((prev) => ({
+                        ...prev,
+                        options: prev.options.filter((_, current) => current !== index),
+                      }))
+                    }
+                  >
+                    <Trash2 size={16} />
+                  </Button>
                 </div>
               ))}
             </div>

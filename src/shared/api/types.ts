@@ -120,7 +120,7 @@ export interface ProductTypeAttribute extends BaseEntity {
   sortOrder: number;
 }
 
-export type AttributeDataType = 'Text' | 'Number' | 'Boolean' | 'Date' | 'Option' | 'MultiOption' | 'Json';
+export type AttributeDataType = import('@/shared/api/catalog-enums').AttributeDataTypeKey | number;
 
 export interface AttributeGroup extends BaseEntity {
   name: string;
@@ -151,12 +151,12 @@ export interface AttributeOption extends BaseEntity {
   sortOrder: number;
 }
 
-export type ProductStatus = string;
-export type ProductVisibility = string;
-export type ProductCollectionType = string;
-export type MediaType = string;
-export type ProductRelationType = string;
-export type SeoLandingPageType = string;
+export type ProductStatus = import('@/shared/api/catalog-enums').ProductStatusKey | number;
+export type ProductVisibility = import('@/shared/api/catalog-enums').ProductVisibilityKey | number;
+export type ProductCollectionType = import('@/shared/api/catalog-enums').ProductCollectionTypeKey | number;
+export type MediaType = import('@/shared/api/catalog-enums').MediaTypeKey | number;
+export type ProductRelationType = import('@/shared/api/catalog-enums').ProductRelationTypeKey | number;
+export type SeoLandingPageType = import('@/shared/api/catalog-enums').SeoLandingPageTypeKey | number;
 
 export interface ProductCollection extends BaseEntity {
   name: string;
@@ -379,4 +379,34 @@ export interface CatalogProductEditor {
 export interface MutationEnvelope<T> {
   id: Guid;
   payload: T;
+}
+
+export interface PartnerProduct {
+  id: Guid;
+  name?: string | null;
+  url?: string | null;
+  photoUrl?: string | null;
+  price: number;
+  currency?: string | null;
+  description?: string | null;
+  shop?: string | null;
+  shopId?: Guid | null;
+  isActive: boolean;
+}
+
+export interface PartnerProductMutationRequest {
+  name?: string | null;
+  url?: string | null;
+  photoUrl?: string | null;
+  price: number;
+  currency?: string | null;
+  description?: string | null;
+  shop?: string | null;
+  shopId?: Guid | null;
+  partner?: string | null;
+  partnerId?: Guid | null;
+  isActive: boolean;
+  isHot: boolean;
+  startDate: string;
+  endDate?: string | null;
 }

@@ -8,8 +8,17 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
   const payload = (await response.json()) as ApiResponse<T>;
 
+  const fallbackError =
+    typeof payload === 'object' && payload !== null
+      ? ('details' in payload && typeof payload.details === 'string'
+          ? payload.details
+          : 'error' in payload && typeof payload.error === 'string'
+            ? payload.error
+            : undefined)
+      : undefined;
+
   if (!response.ok || payload.error) {
-    throw new Error(payload.error?.description ?? `Request failed with status ${response.status}`);
+    throw new Error(payload.error?.description ?? fallbackError ?? `Request failed with status ${response.status}`);
   }
 
   return payload.data as T;
@@ -17,7 +26,6 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
 export async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
-  const method = (init?.method ?? 'GET').toUpperCase();
   const hasBody = init?.body !== undefined && init?.body !== null;
 
   if (hasBody && !headers.has('Content-Type')) {

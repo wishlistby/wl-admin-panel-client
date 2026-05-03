@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { marketingApi, productsApi, setupApi } from '@/shared/api/catalog-api';
+import {
+  productCollectionTypeEnum,
+  productCollectionTypeValues,
+  seoLandingPageTypeEnum,
+  seoLandingPageTypeValues,
+} from '@/shared/api/catalog-enums';
 import type {
   CatalogBootstrap,
   ProductCollection,
@@ -16,6 +22,7 @@ import { ResourceManager } from '@/shared/ui/ResourceManager';
 import { Tabs } from '@/shared/ui/Tabs';
 
 type MarketingTab = 'collections' | 'seo' | 'synonyms' | 'redirects';
+type CategoryOptionNode = { id: string; name: string; depth: number; children: CategoryOptionNode[] };
 
 export function MarketingPage() {
   const [tab, setTab] = useState<MarketingTab>('collections');
@@ -71,7 +78,7 @@ function CollectionsManager() {
         name: entity?.name ?? '',
         slug: entity?.slug ?? '',
         description: entity?.description ?? '',
-        collectionType: entity?.collectionType ?? 'Manual',
+        collectionType: productCollectionTypeEnum.fromApi(entity?.collectionType),
         isIndexable: entity?.isIndexable ?? false,
         metaTitle: entity?.metaTitle ?? '',
         metaDescription: entity?.metaDescription ?? '',
@@ -148,7 +155,7 @@ function CollectionForm({
         label="Тип подборки"
         value={String(form.collectionType ?? 'Manual')}
         onChange={(event) => setForm((prev) => ({ ...prev, collectionType: event.target.value }))}
-        options={['Manual', 'Dynamic', 'Seasonal', 'Featured', 'Bestseller'].map((value) => ({ value, label: value }))}
+        options={productCollectionTypeValues.map((value) => ({ value, label: value }))}
       />
       <TextField label="H1" value={String(form.h1 ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, h1: event.target.value }))} />
       <TextField label="Meta title" value={String(form.metaTitle ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, metaTitle: event.target.value }))} />
@@ -223,7 +230,7 @@ function SeoManager() {
       remove={marketingApi.seo.remove}
       toForm={(entity) => ({
         slug: entity?.slug ?? '',
-        pageType: entity?.pageType ?? 'Category',
+        pageType: seoLandingPageTypeEnum.fromApi(entity?.pageType),
         catalogCategoryId: entity?.catalogCategoryId ?? '',
         brandId: entity?.brandId ?? '',
         productCollectionId: entity?.productCollectionId ?? '',
@@ -268,7 +275,7 @@ function SeoForm({
         label="Page type"
         value={String(form.pageType ?? 'Category')}
         onChange={(event) => setForm((prev) => ({ ...prev, pageType: event.target.value }))}
-        options={['Category', 'Brand', 'Collection', 'CategoryBrand', 'CategoryAttribute', 'CustomFilter'].map((value) => ({ value, label: value }))}
+        options={seoLandingPageTypeValues.map((value) => ({ value, label: value }))}
       />
       <TextField label="Title" value={String(form.title ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} />
       <TextField label="H1" value={String(form.h1 ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, h1: event.target.value }))} />
@@ -372,7 +379,9 @@ function RedirectsManager() {
   );
 }
 
-function flattenCategoryOptions(nodes: Array<{ id: string; name: string; depth: number; children: Array<any> }>): Array<{ value: string; label: string }> {
+function flattenCategoryOptions(
+  nodes: CategoryOptionNode[],
+): Array<{ value: string; label: string }> {
   return nodes.flatMap((node) => [
     { value: node.id, label: `${'· '.repeat(node.depth)}${node.name}` },
     ...flattenCategoryOptions(node.children),

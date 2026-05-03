@@ -23,9 +23,72 @@ import type {
   Tag,
   Warehouse,
 } from '@/shared/api/types';
+import {
+  attributeDataTypeEnum,
+  mediaTypeEnum,
+  productCollectionTypeEnum,
+  productRelationTypeEnum,
+  productStatusEnum,
+  productVisibilityEnum,
+  seoLandingPageTypeEnum,
+} from '@/shared/api/catalog-enums';
 import { http, withQuery } from '@/shared/api/http';
 
 type Id = string;
+
+function normalizeAttributePayload(payload: Record<string, unknown>) {
+  return {
+    ...payload,
+    dataType: attributeDataTypeEnum.toApi(payload.dataType as string | number | undefined),
+  };
+}
+
+function normalizeCollectionPayload(payload: Record<string, unknown>) {
+  return {
+    ...payload,
+    collectionType: productCollectionTypeEnum.toApi(payload.collectionType as string | number | undefined),
+  };
+}
+
+function normalizeSeoPayload(payload: Record<string, unknown>) {
+  return {
+    ...payload,
+    pageType: seoLandingPageTypeEnum.toApi(payload.pageType as string | number | undefined),
+  };
+}
+
+function normalizeProductPayload(
+  payload: Record<string, unknown> & {
+    product?: Record<string, unknown>;
+    productMedia?: Record<string, unknown>[];
+    relations?: Record<string, unknown>[];
+    variants?: Array<Record<string, unknown> & { media?: Record<string, unknown>[] }>;
+  },
+) {
+  return {
+    ...payload,
+    product: {
+      ...payload.product,
+      status: productStatusEnum.toApi(payload.product?.status as string | number | null | undefined),
+      visibility: productVisibilityEnum.toApi(payload.product?.visibility as string | number | null | undefined),
+    },
+    productMedia: (payload.productMedia ?? []).map((item: Record<string, unknown>) => ({
+      ...item,
+      mediaType: mediaTypeEnum.toApi(item.mediaType as string | number | undefined),
+    })),
+    relations: (payload.relations ?? []).map((item: Record<string, unknown>) => ({
+      ...item,
+      relationType: productRelationTypeEnum.toApi(item.relationType as string | number | undefined),
+    })),
+    variants: (payload.variants ?? []).map((variant) => ({
+      ...variant,
+      media: (variant.media ?? []).map((item: Record<string, unknown>) => ({
+        ...item,
+        mediaType: mediaTypeEnum.toApi(item.mediaType as string | number | undefined),
+      })),
+    })),
+  };
+}
 
 export const listQuery = (request: Partial<AdminListRequest>) =>
   withQuery({
@@ -81,6 +144,16 @@ export const structureApi = {
   attributeDefinitions: {
     ...createCrud<AttributeDefinition, Record<string, unknown>>('/admin/catalog/structure/attribute-definitions'),
     getDetail: (id: Id) => http<AttributeDefinitionDetail>(`/admin/catalog/structure/attribute-definitions/${id}`),
+    create: (payload: Record<string, unknown>) =>
+      http<Id>('/admin/catalog/structure/attribute-definitions', {
+        method: 'POST',
+        body: JSON.stringify(normalizeAttributePayload(payload)),
+      }),
+    update: (id: Id, payload: Record<string, unknown>) =>
+      http<void>(`/admin/catalog/structure/attribute-definitions/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(normalizeAttributePayload(payload)),
+      }),
     replaceOptions: (id: Id, payload: Record<string, unknown>[]) =>
       http<void>(`/admin/catalog/structure/attribute-definitions/${id}/options`, { method: 'PUT', body: JSON.stringify(payload) }),
   },
@@ -91,11 +164,11 @@ export const productsApi = {
     http<AdminPagedResult<CatalogProductListItem>>(`/admin/catalog/products${listQuery(request)}`),
   getEditor: (id: Id) => http<CatalogProductEditor>(`/admin/catalog/products/${id}`),
   create: (payload: Record<string, unknown>) =>
-    http<Id>('/admin/catalog/products', { method: 'POST', body: JSON.stringify(payload) }),
+    http<Id>('/admin/catalog/products', { method: 'POST', body: JSON.stringify(normalizeProductPayload(payload)) }),
   update: (envelope: MutationEnvelope<Record<string, unknown>>) =>
     http<Id>(`/admin/catalog/products/${envelope.id}`, {
       method: 'PUT',
-      body: JSON.stringify(envelope.payload),
+      body: JSON.stringify(normalizeProductPayload(envelope.payload)),
     }),
   remove: (id: Id) => http<void>(`/admin/catalog/products/${id}`, { method: 'DELETE' }),
 };
@@ -104,8 +177,30 @@ export const marketingApi = {
   collections: {
     ...createCrud<ProductCollection, Record<string, unknown>>('/admin/catalog/marketing/collections'),
     getDetail: (id: Id) => http<ProductCollectionDetail>(`/admin/catalog/marketing/collections/${id}`),
+    create: (payload: Record<string, unknown>) =>
+      http<Id>('/admin/catalog/marketing/collections', {
+        method: 'POST',
+        body: JSON.stringify(normalizeCollectionPayload(payload)),
+      }),
+    update: (id: Id, payload: Record<string, unknown>) =>
+      http<void>(`/admin/catalog/marketing/collections/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(normalizeCollectionPayload(payload)),
+      }),
   },
-  seo: createCrud<SeoLandingPage, Record<string, unknown>>('/admin/catalog/marketing/seo-landing-pages'),
+  seo: {
+    ...createCrud<SeoLandingPage, Record<string, unknown>>('/admin/catalog/marketing/seo-landing-pages'),
+    create: (payload: Record<string, unknown>) =>
+      http<Id>('/admin/catalog/marketing/seo-landing-pages', {
+        method: 'POST',
+        body: JSON.stringify(normalizeSeoPayload(payload)),
+      }),
+    update: (id: Id, payload: Record<string, unknown>) =>
+      http<void>(`/admin/catalog/marketing/seo-landing-pages/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(normalizeSeoPayload(payload)),
+      }),
+  },
   synonyms: createCrud<SearchSynonym, Record<string, unknown>>('/admin/catalog/marketing/search-synonyms'),
   redirects: createCrud<SearchRedirect, Record<string, unknown>>('/admin/catalog/marketing/search-redirects'),
 };

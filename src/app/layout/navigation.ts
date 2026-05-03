@@ -2,6 +2,7 @@ import {
   Boxes,
   FolderKanban,
   LayoutDashboard,
+  Network,
   Settings2,
   Shapes,
 } from 'lucide-react';
@@ -12,4 +13,5 @@ export const navigation = [
   { to: '/structure', label: 'Структура', icon: Shapes, description: 'Категории, типы, атрибуты' },
   { to: '/products', label: 'Товары', icon: Boxes, description: 'Карточки, SKU, цены, медиа' },
   { to: '/marketing', label: 'Маркетинг', icon: FolderKanban, description: 'Подборки, SEO, поиск' },
+  { to: '/partners', label: 'Партнеры', icon: Network, description: 'Партнерские товары и кэш' },
 ] as const;

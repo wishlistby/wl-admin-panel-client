@@ -2,16 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { productsApi, setupApi } from '@/shared/api/catalog-api';
+import {
+  attributeDataTypeEnum,
+  mediaTypeEnum,
+  mediaTypeValues,
+  productRelationTypeEnum,
+  productRelationTypeValues,
+  productStatusEnum,
+  productStatusValues,
+  productVisibilityEnum,
+  productVisibilityValues,
+} from '@/shared/api/catalog-enums';
 import type {
   CatalogProductEditor,
-  ProductAttributeValue,
-  ProductCollectionItem,
-  ProductMedia,
-  ProductPrice,
-  ProductRelation,
-  ProductTag,
-  ProductVariant,
-  VariantAttributeValue,
 } from '@/shared/api/types';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -20,9 +23,128 @@ import { Tabs } from '@/shared/ui/Tabs';
 import { formatCurrency, formatDate, slugify } from '@/shared/lib/format';
 
 type ProductTab = 'overview' | 'content' | 'variants' | 'marketing';
-type DraftRecord = Record<string, any>;
+type CategoryTreeOption = { id: string; name: string; depth: number; children: CategoryTreeOption[] };
 
-type EditorState = ReturnType<typeof createEmptyProductState>;
+type ProductAttributeDraft = {
+  id?: string;
+  attributeDefinitionId: string;
+  attributeOptionId?: string | null;
+  valueText?: string | null;
+  valueNumber?: number | null;
+  valueBoolean?: boolean | null;
+  valueDate?: string | null;
+  valueJson?: string | null;
+  isActive: boolean;
+};
+
+type ProductMediaDraft = {
+  id?: string;
+  productId?: string;
+  productVariantId?: string | null;
+  url: string;
+  altText?: string | null;
+  title?: string | null;
+  mediaType: string;
+  sortOrder: number;
+  isMain: boolean;
+  isActive: boolean;
+  startDate?: string;
+  lastUpdate?: string;
+};
+
+type ProductPriceDraft = {
+  id?: string;
+  productVariantId?: string | null;
+  priceListId: string;
+  price: number;
+  oldPrice?: number | null;
+  currency: string;
+  validFrom?: string | null;
+  validTo?: string | null;
+  isActive: boolean;
+  startDate?: string;
+  lastUpdate?: string;
+};
+
+type ProductTagDraft = {
+  id?: string;
+  tagId: string;
+  isActive: boolean;
+};
+
+type ProductCollectionDraft = {
+  id?: string;
+  productCollectionId: string;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+type ProductRelationDraft = {
+  id?: string;
+  targetProductId: string;
+  relationType: string;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+type InventoryStockDraft = {
+  id: string;
+  warehouseId: string;
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  isActive: boolean;
+};
+
+type ProductVariantDraft = {
+  id?: string;
+  productId?: string;
+  sku: string;
+  barcode?: string | null;
+  name: string;
+  slug?: string | null;
+  price: number;
+  oldPrice?: number | null;
+  currency: string;
+  stockQuantity: number;
+  weight?: number | null;
+  width?: number | null;
+  height?: number | null;
+  depth?: number | null;
+  isDefault: boolean;
+  isAvailable: boolean;
+  isActive: boolean;
+  startDate?: string;
+  lastUpdate?: string;
+  attributes: ProductAttributeDraft[];
+  inventoryStocks: InventoryStockDraft[];
+  prices: ProductPriceDraft[];
+  media: ProductMediaDraft[];
+};
+
+type EditorState = {
+  product: {
+    productTypeId: string;
+    brandId: string;
+    primaryCategoryId: string;
+    name: string;
+    slug: string;
+    shortDescription: string;
+    description: string;
+    status: string;
+    visibility: string;
+    externalId: string;
+    isActive: boolean;
+  };
+  categories: Array<{ id: string; catalogCategoryId: string; isPrimary: boolean; sortOrder: number; isActive: boolean }>;
+  productAttributes: ProductAttributeDraft[];
+  productMedia: ProductMediaDraft[];
+  productPrices: ProductPriceDraft[];
+  tags: ProductTagDraft[];
+  collections: ProductCollectionDraft[];
+  relations: ProductRelationDraft[];
+  variants: ProductVariantDraft[];
+};
 
 export function ProductsPage() {
   const queryClient = useQueryClient();
@@ -43,6 +165,7 @@ export function ProductsPage() {
 
   useEffect(() => {
     if (!editorQuery.data) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState(mapEditorToState(editorQuery.data));
   }, [editorQuery.data]);
 
@@ -71,12 +194,29 @@ export function ProductsPage() {
         group.definitions.map((definition) => ({
           id: definition.definition.id,
           name: definition.definition.name,
-          dataType: definition.definition.dataType,
+          dataType: attributeDataTypeEnum.fromApi(definition.definition.dataType),
+          isVariantDefining: definition.definition.isVariantDefining,
           options: definition.options,
           groupName: group.group.name,
         })),
       ) ?? [],
     [bootstrapQuery.data],
+  );
+  const selectedProductType = useMemo(
+    () => bootstrapQuery.data?.productTypes.find((item) => item.productType.id === state.product.productTypeId),
+    [bootstrapQuery.data, state.product.productTypeId],
+  );
+  const allowedAttributeIds = useMemo(
+    () => new Set(selectedProductType?.attributes.map((item) => item.attributeDefinitionId) ?? []),
+    [selectedProductType],
+  );
+  const productAttributeDefinitions = useMemo(
+    () => attributeDefinitions.filter((item) => allowedAttributeIds.has(item.id) && !item.isVariantDefining),
+    [allowedAttributeIds, attributeDefinitions],
+  );
+  const variantAttributeDefinitions = useMemo(
+    () => attributeDefinitions.filter((item) => allowedAttributeIds.has(item.id) && item.isVariantDefining),
+    [allowedAttributeIds, attributeDefinitions],
   );
 
   return (
@@ -203,13 +343,13 @@ export function ProductsPage() {
                 label="Статус"
                 value={state.product.status}
                 onChange={(event) => setState((prev) => ({ ...prev, product: { ...prev.product, status: event.target.value } }))}
-                options={['Draft', 'Published', 'Archived', 'OutOfStock'].map((value) => ({ value, label: value }))}
+                options={productStatusValues.map((value) => ({ value, label: value }))}
               />
               <SelectField
                 label="Видимость"
                 value={state.product.visibility}
                 onChange={(event) => setState((prev) => ({ ...prev, product: { ...prev.product, visibility: event.target.value } }))}
-                options={['Visible', 'Hidden', 'SearchOnly', 'DirectLinkOnly'].map((value) => ({ value, label: value }))}
+                options={productVisibilityValues.map((value) => ({ value, label: value }))}
               />
               <TextAreaField className="field-span-2" label="Короткое описание" rows={3} value={state.product.shortDescription} onChange={(event) => setState((prev) => ({ ...prev, product: { ...prev.product, shortDescription: event.target.value } }))} />
               <TextAreaField className="field-span-2" label="Полное описание" rows={6} value={state.product.description} onChange={(event) => setState((prev) => ({ ...prev, product: { ...prev.product, description: event.target.value } }))} />
@@ -258,7 +398,7 @@ export function ProductsPage() {
               <AttributeEditor
                 items={state.productAttributes}
                 onChange={(items) => setState((prev) => ({ ...prev, productAttributes: items }))}
-                definitions={attributeDefinitions}
+                definitions={productAttributeDefinitions}
                 scope="product"
               />
             </Card>
@@ -315,7 +455,7 @@ export function ProductsPage() {
                 </div>
 
                 <Card title="Variant attributes" className="inner-card">
-                  <AttributeEditor items={variant.attributes} onChange={(items) => updateVariant(index, { attributes: items }, setState)} definitions={attributeDefinitions} scope="variant" />
+                  <AttributeEditor items={variant.attributes} onChange={(items) => updateVariant(index, { attributes: items }, setState)} definitions={variantAttributeDefinitions} scope="variant" />
                 </Card>
                 <Card title="Остатки по складам" className="inner-card">
                   <InventoryEditor
@@ -450,7 +590,7 @@ export function ProductsPage() {
                           ),
                         }))
                       }
-                      options={['Accessory', 'CrossSell', 'UpSell', 'Similar', 'Replacement', 'Bundle'].map((value) => ({ value, label: value }))}
+                      options={productRelationTypeValues.map((value) => ({ value, label: value }))}
                     />
                     <TextField
                       label="Порядок"
@@ -485,8 +625,8 @@ function AttributeEditor({
   definitions,
   scope,
 }: {
-  items: DraftRecord[];
-  onChange: (items: DraftRecord[]) => void;
+  items: ProductAttributeDraft[];
+  onChange: (items: ProductAttributeDraft[]) => void;
   definitions: Array<{ id: string; name: string; dataType: string; options: Array<{ id: string; value: string }>; groupName: string }>;
   scope: 'product' | 'variant';
 }) {
@@ -502,11 +642,11 @@ function AttributeEditor({
               label="Атрибут"
               value={String(item.attributeDefinitionId ?? '')}
               onChange={(event) =>
-            onChange(
-              items.map((entry, current) =>
-                current === index
-                  ? {
-                      ...entry,
+                onChange(
+                  items.map((entry, current) =>
+                    current === index
+                      ? {
+                          ...entry,
                           attributeDefinitionId: event.target.value,
                           attributeOptionId: null,
                           valueText: '',
@@ -607,7 +747,7 @@ function AttributeEditor({
   );
 }
 
-function MediaEditor({ items, onChange }: { items: DraftRecord[]; onChange: (items: DraftRecord[]) => void }) {
+function MediaEditor({ items, onChange }: { items: ProductMediaDraft[]; onChange: (items: ProductMediaDraft[]) => void }) {
   return (
     <div className="stack-list compact">
       {items.map((item, index) => (
@@ -618,7 +758,7 @@ function MediaEditor({ items, onChange }: { items: DraftRecord[]; onChange: (ite
             label="Тип медиа"
             value={item.mediaType}
             onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, mediaType: event.target.value } : entry)))}
-            options={['Image', 'Video', 'Document'].map((value) => ({ value, label: value }))}
+            options={mediaTypeValues.map((value) => ({ value, label: value }))}
           />
           <TextField label="Порядок" type="number" value={String(item.sortOrder)} onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, sortOrder: Number(event.target.value) } : entry)))} />
           <CheckboxField label="Основное" checked={item.isMain} onChange={(value) => onChange(items.map((entry, current) => (current === index ? { ...entry, isMain: value } : entry)))} />
@@ -636,8 +776,8 @@ function PriceEditor({
   onChange,
   priceLists,
 }: {
-  items: DraftRecord[];
-  onChange: (items: DraftRecord[]) => void;
+  items: ProductPriceDraft[];
+  onChange: (items: ProductPriceDraft[]) => void;
   priceLists: Array<{ id: string; name: string; currency: string }>;
 }) {
   return (
@@ -715,13 +855,13 @@ function createEmptyProductState() {
       isActive: true,
     },
     categories: [] as Array<{ id: string; catalogCategoryId: string; isPrimary: boolean; sortOrder: number; isActive: boolean }>,
-    productAttributes: [] as DraftRecord[],
-    productMedia: [] as DraftRecord[],
-    productPrices: [] as DraftRecord[],
-    tags: [] as DraftRecord[],
-    collections: [] as DraftRecord[],
-    relations: [] as DraftRecord[],
-    variants: [] as DraftRecord[],
+    productAttributes: [] as ProductAttributeDraft[],
+    productMedia: [] as ProductMediaDraft[],
+    productPrices: [] as ProductPriceDraft[],
+    tags: [] as ProductTagDraft[],
+    collections: [] as ProductCollectionDraft[],
+    relations: [] as ProductRelationDraft[],
+    variants: [] as ProductVariantDraft[],
   };
 }
 
@@ -735,8 +875,8 @@ function mapEditorToState(editor: CatalogProductEditor): EditorState {
       slug: editor.product.slug,
       shortDescription: editor.product.shortDescription ?? '',
       description: editor.product.description ?? '',
-      status: editor.product.status,
-      visibility: editor.product.visibility,
+      status: productStatusEnum.fromApi(editor.product.status),
+      visibility: productVisibilityEnum.fromApi(editor.product.visibility),
       externalId: editor.product.externalId ?? '',
       isActive: editor.product.isActive,
     },
@@ -747,19 +887,35 @@ function mapEditorToState(editor: CatalogProductEditor): EditorState {
       sortOrder: item.sortOrder,
       isActive: item.isActive,
     })),
-    productAttributes: editor.productAttributes as DraftRecord[],
-    productMedia: editor.productMedia as DraftRecord[],
-    productPrices: editor.productPrices as DraftRecord[],
-    tags: editor.tags as DraftRecord[],
-    collections: editor.collections as DraftRecord[],
-    relations: editor.relations as DraftRecord[],
+    productAttributes: editor.productAttributes.map((item) => ({
+      ...item,
+    })) as ProductAttributeDraft[],
+    productMedia: editor.productMedia.map((media) => ({
+      ...media,
+      mediaType: mediaTypeEnum.fromApi(media.mediaType),
+    })) as ProductMediaDraft[],
+    productPrices: editor.productPrices.map((item) => ({ ...item })) as ProductPriceDraft[],
+    tags: editor.tags.map((item) => ({ ...item })) as ProductTagDraft[],
+    collections: editor.collections.map((item) => ({
+      id: item.id,
+      productCollectionId: item.productCollectionId,
+      sortOrder: item.sortOrder,
+      isActive: item.isActive,
+    })) as ProductCollectionDraft[],
+    relations: editor.relations.map((relation) => ({
+      ...relation,
+      relationType: productRelationTypeEnum.fromApi(relation.relationType),
+    })) as ProductRelationDraft[],
     variants: editor.variants.map((item) => ({
       ...item.variant,
-      attributes: item.attributes as DraftRecord[],
-      inventoryStocks: item.inventoryStocks as DraftRecord[],
-      prices: item.prices as DraftRecord[],
-      media: item.media as DraftRecord[],
-    })),
+      attributes: item.attributes.map((attribute) => ({ ...attribute })) as ProductAttributeDraft[],
+      inventoryStocks: item.inventoryStocks.map((stock) => ({ ...stock })) as InventoryStockDraft[],
+      prices: item.prices.map((price) => ({ ...price })) as ProductPriceDraft[],
+      media: item.media.map((media) => ({
+        ...media,
+        mediaType: mediaTypeEnum.fromApi(media.mediaType),
+      })) as ProductMediaDraft[],
+    })) as ProductVariantDraft[],
   };
 }
 
@@ -834,7 +990,7 @@ function toSaveRequest(state: EditorState) {
   };
 }
 
-function cleanAttribute(item: DraftRecord) {
+function cleanAttribute(item: ProductAttributeDraft) {
   return {
     id: item.id,
     attributeDefinitionId: item.attributeDefinitionId,
@@ -848,21 +1004,21 @@ function cleanAttribute(item: DraftRecord) {
   };
 }
 
-function cleanMedia(item: DraftRecord) {
+function cleanMedia(item: ProductMediaDraft) {
   return {
     id: item.id,
     productVariantId: item.productVariantId || null,
     url: item.url,
     altText: item.altText || null,
     title: item.title || null,
-    mediaType: item.mediaType,
+    mediaType: mediaTypeEnum.toApi(item.mediaType),
     sortOrder: item.sortOrder,
     isMain: item.isMain,
     isActive: item.isActive,
   };
 }
 
-function cleanPrice(item: DraftRecord) {
+function cleanPrice(item: ProductPriceDraft) {
   return {
     id: item.id,
     productVariantId: item.productVariantId || null,
@@ -904,13 +1060,15 @@ function createEmptyVariantState() {
   };
 }
 
-function updateVariant(index: number, patch: Record<string, unknown>, setState: React.Dispatch<React.SetStateAction<EditorState>>) {
+function updateVariant(index: number, patch: Partial<ProductVariantDraft>, setState: React.Dispatch<React.SetStateAction<EditorState>>) {
   setState((prev) => ({
     ...prev,
     variants: prev.variants.map((entry, current) => (current === index ? { ...entry, ...patch } : entry)),
   }));
 }
 
-function flattenCategories(nodes: Array<{ id: string; name: string; depth: number; children: Array<any> }>): Array<{ id: string; name: string; depth: number }> {
+function flattenCategories(
+  nodes: CategoryTreeOption[],
+): Array<{ id: string; name: string; depth: number }> {
   return nodes.flatMap((node) => [{ id: node.id, name: node.name, depth: node.depth }, ...flattenCategories(node.children)]);
 }
