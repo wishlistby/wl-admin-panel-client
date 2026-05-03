@@ -150,17 +150,17 @@ export function PartnersPage() {
         onClose={() => setOpen(false)}
       >
         <div className="form-grid form-grid-2">
-          <TextField label="Название" value={form.name ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
-          <TextField label="Цена" type="number" value={String(form.price)} onChange={(event) => setForm((prev) => ({ ...prev, price: Number(event.target.value) || 0 }))} />
-          <TextField label="Валюта" value={form.currency ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, currency: event.target.value.toUpperCase() }))} />
-          <TextField label="Магазин" value={form.shop ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, shop: event.target.value }))} />
-          <TextField className="field-span-2" label="URL товара" value={form.url ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, url: event.target.value }))} />
-          <TextField className="field-span-2" label="URL фото" value={form.photoUrl ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, photoUrl: event.target.value }))} />
-          <TextAreaField className="field-span-2" label="Описание" rows={4} value={form.description ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
-          <TextField label="Partner" value={form.partner ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, partner: event.target.value }))} />
-          <TextField label="Start date" type="datetime-local" value={(form.startDate ?? '').slice(0, 16)} onChange={(event) => setForm((prev) => ({ ...prev, startDate: new Date(event.target.value).toISOString() }))} />
-          <CheckboxField label="Активен" checked={form.isActive} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
-          <CheckboxField label="Hot" checked={form.isHot} onChange={(value) => setForm((prev) => ({ ...prev, isHot: value }))} />
+          <TextField docKey="generic-name" label="Название" value={form.name ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
+          <TextField docKey="localized-price" label="Цена" type="number" value={String(form.price)} onChange={(event) => setForm((prev) => ({ ...prev, price: Number(event.target.value) || 0 }))} />
+          <TextField docKey="currency" label="Валюта" value={form.currency ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, currency: event.target.value.toUpperCase() }))} />
+          <TextField docKey="shop" label="Магазин" value={form.shop ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, shop: event.target.value }))} />
+          <TextField docKey="product-url" className="field-span-2" label="URL товара" value={form.url ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, url: event.target.value }))} />
+          <TextField docKey="photo-url" className="field-span-2" label="URL фото" value={form.photoUrl ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, photoUrl: event.target.value }))} />
+          <TextAreaField docKey="description-generic" className="field-span-2" label="Описание" rows={4} value={form.description ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+          <TextField docKey="partner" label="Partner" value={form.partner ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, partner: event.target.value }))} />
+          <TextField docKey="start-date" label="Start date" type="datetime-local" value={(form.startDate ?? '').slice(0, 16)} onChange={(event) => setForm((prev) => ({ ...prev, startDate: new Date(event.target.value).toISOString() }))} />
+          <CheckboxField docKey="active-generic" label="Активен" checked={form.isActive} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
+          <CheckboxField docKey="hot" label="Hot" checked={form.isHot} onChange={(value) => setForm((prev) => ({ ...prev, isHot: value }))} />
         </div>
         <div className="dialog-actions">
           <Button variant="secondary" onClick={() => setOpen(false)}>

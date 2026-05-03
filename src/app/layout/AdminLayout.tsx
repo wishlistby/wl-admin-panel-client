@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { navigation } from '@/app/layout/navigation';
 import { env } from '@/shared/config/env';
@@ -5,6 +6,19 @@ import { env } from '@/shared/config/env';
 export function AdminLayout() {
   const location = useLocation();
   const activeItem = navigation.find((item) => item.to === location.pathname) ?? navigation[0];
+
+  useEffect(() => {
+    if (!location.hash) {
+      return;
+    }
+
+    const targetId = location.hash.slice(1);
+    const timer = window.setTimeout(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, [location.hash, location.pathname, location.search]);
 
   return (
     <div className="shell">

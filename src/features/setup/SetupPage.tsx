@@ -69,16 +69,16 @@ function BrandsManager() {
       )}
       renderForm={(form, setForm) => (
         <>
-          <TextField label="Название" value={String(form.name ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
-          <TextField label="Slug" value={String(form.slug ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))} />
-          <TextField label="Страна" value={String(form.country ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))} />
-          <TextField label="Логотип URL" value={String(form.logoUrl ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))} />
-          <TextField label="Website URL" value={String(form.websiteUrl ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, websiteUrl: e.target.value }))} />
-          <TextField label="Meta title" value={String(form.metaTitle ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, metaTitle: e.target.value }))} />
-          <TextAreaField className="field-span-2" label="Описание" rows={4} value={String(form.description ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} />
-          <TextAreaField className="field-span-2" label="Meta description" rows={3} value={String(form.metaDescription ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, metaDescription: e.target.value }))} />
-          <CheckboxField label="Индексировать" checked={Boolean(form.isIndexable)} onChange={(value) => setForm((prev) => ({ ...prev, isIndexable: value }))} />
-          <CheckboxField label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
+          <TextField docKey="brand" label="Название" value={String(form.name ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
+          <TextField docKey="slug" label="Slug" value={String(form.slug ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))} />
+          <TextField docKey="country" label="Страна" value={String(form.country ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))} />
+          <TextField docKey="logo-url" label="Логотип URL" value={String(form.logoUrl ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))} />
+          <TextField docKey="website-url" label="Website URL" value={String(form.websiteUrl ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, websiteUrl: e.target.value }))} />
+          <TextField docKey="meta-title" label="Meta title" value={String(form.metaTitle ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, metaTitle: e.target.value }))} />
+          <TextAreaField docKey="description-generic" className="field-span-2" label="Описание" rows={4} value={String(form.description ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} />
+          <TextAreaField docKey="meta-description" className="field-span-2" label="Meta description" rows={3} value={String(form.metaDescription ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, metaDescription: e.target.value }))} />
+          <CheckboxField docKey="indexable-generic" label="Индексировать" checked={Boolean(form.isIndexable)} onChange={(value) => setForm((prev) => ({ ...prev, isIndexable: value }))} />
+          <CheckboxField docKey="active-generic" label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
         </>
       )}
     />
@@ -114,12 +114,12 @@ function PriceListsManager() {
       )}
       renderForm={(form, setForm) => (
         <>
-          <TextField label="Название" value={String(form.name ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
-          <TextField label="Код" value={String(form.code ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value }))} />
-          <TextField label="Валюта" value={String(form.currency ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} />
-          <TextField label="Сегмент клиентов" value={String(form.customerGroupCode ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, customerGroupCode: e.target.value }))} />
-          <CheckboxField label="По умолчанию" checked={Boolean(form.isDefault)} onChange={(value) => setForm((prev) => ({ ...prev, isDefault: value }))} />
-          <CheckboxField label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
+          <TextField docKey="price-list" label="Название" value={String(form.name ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
+          <TextField docKey="code" label="Код" value={String(form.code ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value }))} />
+          <TextField docKey="currency" label="Валюта" value={String(form.currency ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} />
+          <TextField docKey="customer-segment" label="Сегмент клиентов" value={String(form.customerGroupCode ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, customerGroupCode: e.target.value }))} />
+          <CheckboxField docKey="default-generic" label="По умолчанию" checked={Boolean(form.isDefault)} onChange={(value) => setForm((prev) => ({ ...prev, isDefault: value }))} />
+          <CheckboxField docKey="active-generic" label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
         </>
       )}
     />
@@ -156,13 +156,13 @@ function WarehousesManager() {
       )}
       renderForm={(form, setForm) => (
         <>
-          <TextField label="Название" value={String(form.name ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
-          <TextField label="Код" value={String(form.code ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value }))} />
-          <TextField label="Город" value={String(form.city ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))} />
-          <TextField label="Страна" value={String(form.country ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))} />
-          <TextAreaField className="field-span-2" label="Адрес" rows={3} value={String(form.address ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} />
-          <CheckboxField label="Склад по умолчанию" checked={Boolean(form.isDefault)} onChange={(value) => setForm((prev) => ({ ...prev, isDefault: value }))} />
-          <CheckboxField label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
+          <TextField docKey="warehouse" label="Название" value={String(form.name ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
+          <TextField docKey="code" label="Код" value={String(form.code ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value }))} />
+          <TextField docKey="city" label="Город" value={String(form.city ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))} />
+          <TextField docKey="country" label="Страна" value={String(form.country ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))} />
+          <TextAreaField docKey="address" className="field-span-2" label="Адрес" rows={3} value={String(form.address ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} />
+          <CheckboxField docKey="default-warehouse" label="Склад по умолчанию" checked={Boolean(form.isDefault)} onChange={(value) => setForm((prev) => ({ ...prev, isDefault: value }))} />
+          <CheckboxField docKey="active-generic" label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
         </>
       )}
     />
@@ -195,11 +195,11 @@ function TagsManager() {
       )}
       renderForm={(form, setForm) => (
         <>
-          <TextField label="Название" value={String(form.name ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
-          <TextField label="Slug" value={String(form.slug ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))} />
-          <TextAreaField className="field-span-2" label="Описание" rows={4} value={String(form.description ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} />
-          <CheckboxField label="Индексировать страницу тега" checked={Boolean(form.isIndexable)} onChange={(value) => setForm((prev) => ({ ...prev, isIndexable: value }))} />
-          <CheckboxField label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
+          <TextField docKey="generic-name" label="Название" value={String(form.name ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
+          <TextField docKey="slug" label="Slug" value={String(form.slug ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))} />
+          <TextAreaField docKey="description-generic" className="field-span-2" label="Описание" rows={4} value={String(form.description ?? '')} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} />
+          <CheckboxField docKey="tag-indexable" label="Индексировать страницу тега" checked={Boolean(form.isIndexable)} onChange={(value) => setForm((prev) => ({ ...prev, isIndexable: value }))} />
+          <CheckboxField docKey="active-generic" label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
         </>
       )}
     />

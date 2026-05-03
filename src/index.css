@@ -268,6 +268,13 @@ textarea {
   align-items: start;
 }
 
+.docs-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 0.7fr 1.4fr;
+  align-items: start;
+}
+
 .products-workspace {
   grid-template-columns: 0.8fr 1.5fr;
 }
@@ -389,9 +396,72 @@ textarea {
   gap: 0.45rem;
 }
 
+.field-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
 .field > span,
 .checkbox strong {
   color: var(--text);
+}
+
+.field-help {
+  position: relative;
+  display: inline-flex;
+}
+
+.field-help-trigger {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(92, 99, 255, 0.12);
+  color: var(--primary-strong);
+  cursor: help;
+}
+
+.field-help-popover {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.55rem);
+  z-index: 25;
+  display: grid;
+  gap: 0.45rem;
+  width: min(19rem, 78vw);
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: rgba(31, 37, 82, 0.98);
+  box-shadow: var(--shadow);
+  color: #f5f7ff;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.field-help-popover strong,
+.field-help-popover span,
+.field-help-popover a {
+  display: block;
+}
+
+.field-help-popover a {
+  color: #b9c4ff;
+  text-decoration: none;
+}
+
+.field-help:hover .field-help-popover,
+.field-help:focus-within .field-help-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .input,
@@ -634,11 +704,82 @@ textarea {
   color: var(--danger);
 }
 
+.docs-sidebar-card {
+  position: sticky;
+  top: 1.5rem;
+}
+
+.docs-search {
+  width: 100%;
+}
+
+.docs-back-button {
+  width: 100%;
+}
+
+.docs-toc {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.docs-toc-link {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  text-decoration: none;
+}
+
+.docs-toc-link span {
+  color: var(--primary-strong);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.docs-toc-link.is-active {
+  border-color: rgba(92, 99, 255, 0.35);
+  background: rgba(92, 99, 255, 0.1);
+}
+
+.docs-section-card.is-highlighted {
+  border-color: rgba(92, 99, 255, 0.36);
+  box-shadow: 0 24px 60px rgba(92, 99, 255, 0.18);
+}
+
+.docs-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.docs-section p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.65;
+}
+
+.docs-bullets {
+  color: var(--text);
+}
+
+.docs-related {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.docs-chip-link {
+  text-decoration: none;
+}
+
 @media (max-width: 1200px) {
   .shell,
   .grid-split,
   .grid-three,
   .products-workspace,
+  .docs-layout,
   .stats-grid,
   .grid-two,
   .form-grid-3 {
@@ -648,5 +789,9 @@ textarea {
   .sidebar {
     position: static;
     height: auto;
+  }
+
+  .docs-sidebar-card {
+    position: static;
   }
 }

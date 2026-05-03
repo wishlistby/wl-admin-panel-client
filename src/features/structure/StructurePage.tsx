@@ -235,6 +235,7 @@ function CategoryStudio() {
       >
         <div className="form-grid form-grid-2">
           <SelectField
+            docKey="parent-category"
             label="Родитель"
             value={form.parentId}
             onChange={(event) => setForm((prev) => ({ ...prev, parentId: event.target.value }))}
@@ -244,6 +245,7 @@ function CategoryStudio() {
             ]}
           />
           <TextField
+            docKey="category-select"
             label="Название"
             value={form.name}
             onChange={(event) =>
@@ -254,18 +256,18 @@ function CategoryStudio() {
               }))
             }
           />
-          <TextField label="Slug" value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
-          <TextField label="Full path" value={form.fullPath} onChange={(event) => setForm((prev) => ({ ...prev, fullPath: event.target.value }))} />
-          <TextField label="Depth" type="number" value={String(form.depth)} onChange={(event) => setForm((prev) => ({ ...prev, depth: Number(event.target.value) }))} />
-          <TextField label="Sort order" type="number" value={String(form.sortOrder)} onChange={(event) => setForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) }))} />
-          <TextField label="Meta title" value={form.metaTitle} onChange={(event) => setForm((prev) => ({ ...prev, metaTitle: event.target.value }))} />
-          <TextField label="H1" value={form.h1} onChange={(event) => setForm((prev) => ({ ...prev, h1: event.target.value }))} />
-          <TextAreaField className="field-span-2" label="Meta description" rows={3} value={form.metaDescription} onChange={(event) => setForm((prev) => ({ ...prev, metaDescription: event.target.value }))} />
-          <TextAreaField className="field-span-2" label="SEO text" rows={5} value={form.seoText} onChange={(event) => setForm((prev) => ({ ...prev, seoText: event.target.value }))} />
-          <TextField className="field-span-2" label="Canonical URL" value={form.canonicalUrl} onChange={(event) => setForm((prev) => ({ ...prev, canonicalUrl: event.target.value }))} />
-          <CheckboxField label="Индексировать категорию" checked={form.isIndexable} onChange={(value) => setForm((prev) => ({ ...prev, isIndexable: value }))} />
-          <CheckboxField label="Категория активна" checked={form.isActive} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
-          <CheckboxField label="Применить видимость к дочерним" hint="Подчинённые страницы унаследуют активность и индексируемость." checked={form.propagateVisibility} onChange={(value) => setForm((prev) => ({ ...prev, propagateVisibility: value }))} />
+          <TextField docKey="slug" label="Slug" value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
+          <TextField docKey="full-path" label="Full path" value={form.fullPath} onChange={(event) => setForm((prev) => ({ ...prev, fullPath: event.target.value }))} />
+          <TextField docKey="depth" label="Depth" type="number" value={String(form.depth)} onChange={(event) => setForm((prev) => ({ ...prev, depth: Number(event.target.value) }))} />
+          <TextField docKey="sort-order" label="Sort order" type="number" value={String(form.sortOrder)} onChange={(event) => setForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) }))} />
+          <TextField docKey="meta-title" label="Meta title" value={form.metaTitle} onChange={(event) => setForm((prev) => ({ ...prev, metaTitle: event.target.value }))} />
+          <TextField docKey="h1" label="H1" value={form.h1} onChange={(event) => setForm((prev) => ({ ...prev, h1: event.target.value }))} />
+          <TextAreaField docKey="meta-description" className="field-span-2" label="Meta description" rows={3} value={form.metaDescription} onChange={(event) => setForm((prev) => ({ ...prev, metaDescription: event.target.value }))} />
+          <TextAreaField docKey="seo-text" className="field-span-2" label="SEO text" rows={5} value={form.seoText} onChange={(event) => setForm((prev) => ({ ...prev, seoText: event.target.value }))} />
+          <TextField docKey="canonical-url" className="field-span-2" label="Canonical URL" value={form.canonicalUrl} onChange={(event) => setForm((prev) => ({ ...prev, canonicalUrl: event.target.value }))} />
+          <CheckboxField docKey="category-indexable" label="Индексировать категорию" checked={form.isIndexable} onChange={(value) => setForm((prev) => ({ ...prev, isIndexable: value }))} />
+          <CheckboxField docKey="category-active" label="Категория активна" checked={form.isActive} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
+          <CheckboxField docKey="propagate-visibility" label="Применить видимость к дочерним" hint="Подчинённые страницы унаследуют активность и индексируемость." checked={form.propagateVisibility} onChange={(value) => setForm((prev) => ({ ...prev, propagateVisibility: value }))} />
         </div>
 
         {detailQuery.data && (
@@ -274,6 +276,7 @@ function CategoryStudio() {
               {form.attributes.map((attribute, index) => (
                 <div key={String(attribute.id ?? index)} className="matrix-row">
                   <SelectField
+                    docKey="category-attribute"
                     label="Атрибут"
                     value={String(attribute.attributeDefinitionId ?? '')}
                     onChange={(event) =>
@@ -297,6 +300,7 @@ function CategoryStudio() {
                     ]}
                   />
                   <TextField
+                    docKey="sort-order-generic"
                     label="Порядок"
                     type="number"
                     value={String(attribute.sortOrder ?? 0)}
@@ -310,6 +314,7 @@ function CategoryStudio() {
                     }
                   />
                   <CheckboxField
+                    docKey="visible-in-filter"
                     label="Показывать в фильтре"
                     checked={Boolean(attribute.isVisibleInFilter)}
                     onChange={(value) =>
@@ -322,6 +327,7 @@ function CategoryStudio() {
                     }
                   />
                   <CheckboxField
+                    docKey="expanded-by-default"
                     label="Раскрывать по умолчанию"
                     checked={Boolean(attribute.isExpandedByDefault)}
                     onChange={(value) =>
@@ -334,6 +340,7 @@ function CategoryStudio() {
                     }
                   />
                   <CheckboxField
+                    docKey="seo-relevant"
                     label="SEO-relevant"
                     checked={Boolean(attribute.isSeoRelevant)}
                     onChange={(value) =>
@@ -515,10 +522,10 @@ function ProductTypeStudio() {
           </div>
         )}
         <div className="form-grid form-grid-2">
-          <TextField label="Название" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
-          <TextField label="Slug" value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
-          <TextAreaField className="field-span-2" label="Описание" rows={3} value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
-          <CheckboxField label="Тип активен" checked={form.isActive} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
+          <TextField docKey="product-type" label="Название" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
+          <TextField docKey="slug" label="Slug" value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
+          <TextAreaField docKey="description-generic" className="field-span-2" label="Описание" rows={3} value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+          <CheckboxField docKey="type-active" label="Тип активен" checked={form.isActive} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
         </div>
 
         <Card title="Атрибуты типа" className="inner-card">
@@ -526,6 +533,7 @@ function ProductTypeStudio() {
             {form.attributes.map((item, index) => (
               <div key={String(item.id ?? index)} className="matrix-row">
                 <SelectField
+                  docKey="category-attribute"
                   label="Атрибут"
                   value={String(item.attributeDefinitionId ?? '')}
                   onChange={(event) =>
@@ -539,6 +547,7 @@ function ProductTypeStudio() {
                   options={[{ value: '', label: 'Выбери атрибут' }, ...attributeOptions]}
                 />
                 <TextField
+                  docKey="sort-order-generic"
                   label="Порядок"
                   type="number"
                   value={String(item.sortOrder ?? 0)}
@@ -552,6 +561,7 @@ function ProductTypeStudio() {
                   }
                 />
                 <CheckboxField
+                  docKey="attribute-required"
                   label="Обязателен"
                   checked={Boolean(item.isRequired)}
                   onChange={(value) =>
@@ -564,6 +574,7 @@ function ProductTypeStudio() {
                   }
                 />
                 <CheckboxField
+                  docKey="attribute-filterable-ru"
                   label="Фильтруемый"
                   checked={Boolean(item.isFilterable)}
                   onChange={(value) =>
@@ -781,11 +792,11 @@ function AttributeStudio() {
           </Button>
         </div>
         <div className="form-grid">
-          <TextField label="Название группы" value={groupForm.name} onChange={(event) => setGroupForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
-          <TextField label="Slug" value={groupForm.slug} onChange={(event) => setGroupForm((prev) => ({ ...prev, slug: event.target.value }))} />
-          <TextAreaField label="Описание" rows={3} value={groupForm.description} onChange={(event) => setGroupForm((prev) => ({ ...prev, description: event.target.value }))} />
-          <TextField label="Sort order" type="number" value={String(groupForm.sortOrder)} onChange={(event) => setGroupForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) }))} />
-          <CheckboxField label="Группа активна" checked={groupForm.isActive} onChange={(value) => setGroupForm((prev) => ({ ...prev, isActive: value }))} />
+          <TextField docKey="attribute-group-name" label="Название группы" value={groupForm.name} onChange={(event) => setGroupForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
+          <TextField docKey="slug" label="Slug" value={groupForm.slug} onChange={(event) => setGroupForm((prev) => ({ ...prev, slug: event.target.value }))} />
+          <TextAreaField docKey="description-generic" label="Описание" rows={3} value={groupForm.description} onChange={(event) => setGroupForm((prev) => ({ ...prev, description: event.target.value }))} />
+          <TextField docKey="sort-order" label="Sort order" type="number" value={String(groupForm.sortOrder)} onChange={(event) => setGroupForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) }))} />
+          <CheckboxField docKey="group-active" label="Группа активна" checked={groupForm.isActive} onChange={(value) => setGroupForm((prev) => ({ ...prev, isActive: value }))} />
           <Button onClick={() => saveGroup.mutate()} disabled={saveGroup.isPending}>
             Сохранить группу
           </Button>
@@ -852,6 +863,7 @@ function AttributeStudio() {
         )}
         <div className="form-grid">
           <SelectField
+            docKey="group"
             label="Группа"
             value={definitionForm.attributeGroupId}
             onChange={(event) => setDefinitionForm((prev) => ({ ...prev, attributeGroupId: event.target.value }))}
@@ -860,23 +872,24 @@ function AttributeStudio() {
               ...(groupsQuery.data?.items.map((item) => ({ value: item.id, label: item.name })) ?? []),
             ]}
           />
-          <TextField label="Код" value={definitionForm.code} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, code: event.target.value }))} />
-          <TextField label="Название" value={definitionForm.name} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, name: event.target.value }))} />
+          <TextField docKey="code" label="Код" value={definitionForm.code} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, code: event.target.value }))} />
+          <TextField docKey="category-attribute" label="Название" value={definitionForm.name} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, name: event.target.value }))} />
           <SelectField
+            docKey="data-type"
             label="Тип данных"
             value={definitionForm.dataType}
             onChange={(event) => setDefinitionForm((prev) => ({ ...prev, dataType: event.target.value }))}
             options={attributeDataTypeValues.map((value) => ({ value, label: value }))}
           />
-          <TextField label="Unit" value={definitionForm.unit} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, unit: event.target.value }))} />
-          <TextField label="Sort order" type="number" value={String(definitionForm.sortOrder)} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) }))} />
-          <TextAreaField className="field-span-2" label="Описание" rows={3} value={definitionForm.description} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, description: event.target.value }))} />
-          <CheckboxField label="Filterable" checked={definitionForm.isFilterable} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isFilterable: value }))} />
-          <CheckboxField label="Searchable" checked={definitionForm.isSearchable} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isSearchable: value }))} />
-          <CheckboxField label="Comparable" checked={definitionForm.isComparable} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isComparable: value }))} />
-          <CheckboxField label="Variant defining" checked={definitionForm.isVariantDefining} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isVariantDefining: value }))} />
-          <CheckboxField label="Required" checked={definitionForm.isRequired} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isRequired: value }))} />
-          <CheckboxField label="Активен" checked={definitionForm.isActive} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isActive: value }))} />
+          <TextField docKey="unit" label="Unit" value={definitionForm.unit} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, unit: event.target.value }))} />
+          <TextField docKey="sort-order" label="Sort order" type="number" value={String(definitionForm.sortOrder)} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) }))} />
+          <TextAreaField docKey="description-generic" className="field-span-2" label="Описание" rows={3} value={definitionForm.description} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, description: event.target.value }))} />
+          <CheckboxField docKey="filterable" label="Filterable" checked={definitionForm.isFilterable} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isFilterable: value }))} />
+          <CheckboxField docKey="searchable" label="Searchable" checked={definitionForm.isSearchable} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isSearchable: value }))} />
+          <CheckboxField docKey="comparable" label="Comparable" checked={definitionForm.isComparable} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isComparable: value }))} />
+          <CheckboxField docKey="variant-defining" label="Variant defining" checked={definitionForm.isVariantDefining} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isVariantDefining: value }))} />
+          <CheckboxField docKey="required" label="Required" checked={definitionForm.isRequired} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isRequired: value }))} />
+          <CheckboxField docKey="active-generic" label="Активен" checked={definitionForm.isActive} onChange={(value) => setDefinitionForm((prev) => ({ ...prev, isActive: value }))} />
         </div>
 
         {(definitionForm.dataType === 'Option' || definitionForm.dataType === 'MultiOption') && (
@@ -885,6 +898,7 @@ function AttributeStudio() {
               {definitionForm.options.map((item, index) => (
                 <div key={String(item.id ?? index)} className="matrix-row">
                   <TextField
+                    docKey="option-value"
                     label="Value"
                     value={String(item.value ?? '')}
                     onChange={(event) =>
@@ -897,6 +911,7 @@ function AttributeStudio() {
                     }
                   />
                   <TextField
+                    docKey="slug"
                     label="Slug"
                     value={String(item.slug ?? '')}
                     onChange={(event) =>
@@ -909,6 +924,7 @@ function AttributeStudio() {
                     }
                   />
                   <TextField
+                    docKey="sort-order-generic"
                     label="Порядок"
                     type="number"
                     value={String(item.sortOrder ?? 0)}
@@ -922,6 +938,7 @@ function AttributeStudio() {
                     }
                   />
                   <CheckboxField
+                    docKey="active-generic"
                     label="Активен"
                     checked={Boolean(item.isActive)}
                     onChange={(value) =>
