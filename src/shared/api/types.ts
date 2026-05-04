@@ -3,6 +3,7 @@ export type Guid = string;
 export interface ApiError {
   code?: string;
   description?: string;
+  data?: unknown;
 }
 
 export interface ApiResponse<T> {

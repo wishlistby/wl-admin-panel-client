@@ -1,7 +1,24 @@
 import type { PropsWithChildren } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HttpError, toUserMessage } from '@/shared/api/http-error';
+import { NotificationViewport, pushErrorNotification } from '@/shared/ui/notifications';
 
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      if (query.state.data !== undefined) {
+        pushErrorNotification('Не удалось обновить данные', toUserMessage(error));
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      pushErrorNotification(
+        error instanceof HttpError && error.details.length > 0 ? 'Проверьте обязательные поля' : 'Не удалось выполнить действие',
+        toUserMessage(error),
+      );
+    },
+  }),
   defaultOptions: {
     queries: {
       staleTime: 30_000,
@@ -15,5 +32,10 @@ const queryClient = new QueryClient({
 });
 
 export function AppProviders({ children }: PropsWithChildren) {
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <NotificationViewport />
+    </QueryClientProvider>
+  );
 }

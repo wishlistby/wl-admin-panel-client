@@ -11,6 +11,7 @@ interface FieldProps {
   className?: string;
   trailing?: React.ReactNode;
   docKey?: string;
+  required?: boolean;
 }
 
 interface TextFieldProps extends FieldProps, InputHTMLAttributes<HTMLInputElement> {}
@@ -48,24 +49,27 @@ function FieldHelp({ label, docKey, anchorId }: { label: string; docKey?: string
   );
 }
 
-function FieldLabel({ label, docKey, anchorId }: { label: string; docKey?: string; anchorId: string }) {
+function FieldLabel({ label, docKey, anchorId, required }: { label: string; docKey?: string; anchorId: string; required?: boolean }) {
   return (
     <span className="field-label-row">
-      <span>{label}</span>
+      <span>
+        {label}
+        {required && <span className="field-required-mark" aria-hidden="true">*</span>}
+      </span>
       <FieldHelp label={label} docKey={docKey} anchorId={anchorId} />
     </span>
   );
 }
 
-export function TextField({ label, hint, error, className, trailing, docKey, id, ...props }: TextFieldProps) {
+export function TextField({ label, hint, error, className, trailing, docKey, required, id, ...props }: TextFieldProps) {
   const autoId = useId();
   const fieldId = id ?? `field-${autoId.replace(/:/g, '')}`;
 
   return (
     <label id={`${fieldId}-anchor`} className={`field ${className ?? ''}`}>
-      <FieldLabel label={label} docKey={docKey} anchorId={`${fieldId}-anchor`} />
+      <FieldLabel label={label} docKey={docKey} anchorId={`${fieldId}-anchor`} required={required} />
       <div className="input-wrap">
-        <input id={fieldId} className="input" {...props} />
+        <input id={fieldId} className="input" required={required} {...props} />
         {trailing}
       </div>
       {hint && !error && <small>{hint}</small>}
@@ -74,28 +78,28 @@ export function TextField({ label, hint, error, className, trailing, docKey, id,
   );
 }
 
-export function TextAreaField({ label, hint, error, className, docKey, id, ...props }: TextAreaProps) {
+export function TextAreaField({ label, hint, error, className, docKey, required, id, ...props }: TextAreaProps) {
   const autoId = useId();
   const fieldId = id ?? `field-${autoId.replace(/:/g, '')}`;
 
   return (
     <label id={`${fieldId}-anchor`} className={`field ${className ?? ''}`}>
-      <FieldLabel label={label} docKey={docKey} anchorId={`${fieldId}-anchor`} />
-      <textarea id={fieldId} className="textarea" {...props} />
+      <FieldLabel label={label} docKey={docKey} anchorId={`${fieldId}-anchor`} required={required} />
+      <textarea id={fieldId} className="textarea" required={required} {...props} />
       {hint && !error && <small>{hint}</small>}
       {error && <small className="field-error">{error}</small>}
     </label>
   );
 }
 
-export function SelectField({ label, hint, error, className, options, docKey, id, ...props }: SelectFieldProps) {
+export function SelectField({ label, hint, error, className, options, docKey, required, id, ...props }: SelectFieldProps) {
   const autoId = useId();
   const fieldId = id ?? `field-${autoId.replace(/:/g, '')}`;
 
   return (
     <label id={`${fieldId}-anchor`} className={`field ${className ?? ''}`}>
-      <FieldLabel label={label} docKey={docKey} anchorId={`${fieldId}-anchor`} />
-      <select id={fieldId} className="select" {...props}>
+      <FieldLabel label={label} docKey={docKey} anchorId={`${fieldId}-anchor`} required={required} />
+      <select id={fieldId} className="select" required={required} {...props}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -108,7 +112,7 @@ export function SelectField({ label, hint, error, className, options, docKey, id
   );
 }
 
-export function CheckboxField({ label, hint, checked, onChange, docKey }: CheckboxFieldProps) {
+export function CheckboxField({ label, hint, checked, onChange, docKey, required }: CheckboxFieldProps) {
   const autoId = useId();
   const fieldId = `field-${autoId.replace(/:/g, '')}`;
 
@@ -117,7 +121,10 @@ export function CheckboxField({ label, hint, checked, onChange, docKey }: Checkb
       <input id={fieldId} type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
       <span>
         <span className="field-label-row">
-          <strong>{label}</strong>
+          <strong>
+            {label}
+            {required && <span className="field-required-mark" aria-hidden="true">*</span>}
+          </strong>
           <FieldHelp label={label} docKey={docKey} anchorId={`${fieldId}-anchor`} />
         </span>
         {hint && <small>{hint}</small>}

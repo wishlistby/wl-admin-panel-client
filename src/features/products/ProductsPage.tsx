@@ -312,6 +312,7 @@ export function ProductsPage() {
           <Card title="Основа карточки" description="Бизнес-контекст товара: тип, бренд, категория, описания и публикация.">
             <div className="form-grid form-grid-2">
               <TextField
+                required
                 label="Название товара"
                 value={state.product.name}
                 onChange={(event) =>
@@ -325,8 +326,9 @@ export function ProductsPage() {
                   }))
                 }
               />
-              <TextField label="Slug" value={state.product.slug} onChange={(event) => setState((prev) => ({ ...prev, product: { ...prev.product, slug: event.target.value } }))} />
+              <TextField required label="Slug" value={state.product.slug} onChange={(event) => setState((prev) => ({ ...prev, product: { ...prev.product, slug: event.target.value } }))} />
               <SelectField
+                required
                 label="Тип товара"
                 value={state.product.productTypeId}
                 onChange={(event) => setState((prev) => ({ ...prev, product: { ...prev.product, productTypeId: event.target.value } }))}
@@ -345,6 +347,7 @@ export function ProductsPage() {
                 ]}
               />
               <SelectField
+                required
                 label="Основная категория"
                 value={state.product.primaryCategoryId}
                 onChange={(event) => setState((prev) => ({ ...prev, product: { ...prev.product, primaryCategoryId: event.target.value } }))}
@@ -452,13 +455,13 @@ export function ProductsPage() {
                 }
               >
                 <div className="form-grid form-grid-3">
-                  <TextField label="Название SKU" value={String(variant.name ?? '')} onChange={(event) => updateVariant(index, { name: event.target.value }, setState)} />
-                  <TextField label="SKU" value={String(variant.sku ?? '')} onChange={(event) => updateVariant(index, { sku: event.target.value }, setState)} />
+                  <TextField required label="Название SKU" value={String(variant.name ?? '')} onChange={(event) => updateVariant(index, { name: event.target.value }, setState)} />
+                  <TextField required label="SKU" value={String(variant.sku ?? '')} onChange={(event) => updateVariant(index, { sku: event.target.value }, setState)} />
                   <TextField label="Barcode" value={String(variant.barcode ?? '')} onChange={(event) => updateVariant(index, { barcode: event.target.value }, setState)} />
                   <TextField label="Slug" value={String(variant.slug ?? '')} onChange={(event) => updateVariant(index, { slug: event.target.value }, setState)} />
                   <TextField label="Price" type="number" value={String(variant.price)} onChange={(event) => updateVariant(index, { price: Number(event.target.value) }, setState)} />
                   <TextField label="Old price" type="number" value={String(variant.oldPrice ?? '')} onChange={(event) => updateVariant(index, { oldPrice: Number(event.target.value) || null }, setState)} />
-                  <TextField label="Currency" value={String(variant.currency ?? '')} onChange={(event) => updateVariant(index, { currency: event.target.value.toUpperCase() }, setState)} />
+                  <TextField required label="Currency" value={String(variant.currency ?? '')} onChange={(event) => updateVariant(index, { currency: event.target.value.toUpperCase() }, setState)} />
                   <TextField label="Stock quantity" type="number" value={String(variant.stockQuantity)} onChange={(event) => updateVariant(index, { stockQuantity: Number(event.target.value) }, setState)} />
                   <TextField label="Weight" type="number" value={String(variant.weight ?? '')} onChange={(event) => updateVariant(index, { weight: Number(event.target.value) || null }, setState)} />
                   <TextField label="Width" type="number" value={String(variant.width ?? '')} onChange={(event) => updateVariant(index, { width: Number(event.target.value) || null }, setState)} />

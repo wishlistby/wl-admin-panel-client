@@ -268,6 +268,7 @@ function CategoryStudio() {
             ]}
           />
           <TextField
+            required
             docKey="category-select"
             label="Название"
             value={form.name}
@@ -279,8 +280,8 @@ function CategoryStudio() {
               }))
             }
           />
-          <TextField docKey="slug" label="Slug" value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
-          <TextField docKey="full-path" label="Full path" value={form.fullPath} onChange={(event) => setForm((prev) => ({ ...prev, fullPath: event.target.value }))} />
+          <TextField required docKey="slug" label="Slug" value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
+          <TextField required docKey="full-path" label="Full path" value={form.fullPath} onChange={(event) => setForm((prev) => ({ ...prev, fullPath: event.target.value }))} />
           <TextField docKey="depth" label="Depth" type="number" value={String(form.depth)} onChange={(event) => setForm((prev) => ({ ...prev, depth: Number(event.target.value) }))} />
           <TextField docKey="sort-order" label="Sort order" type="number" value={String(form.sortOrder)} onChange={(event) => setForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) }))} />
           <TextField docKey="meta-title" label="Meta title" value={form.metaTitle} onChange={(event) => setForm((prev) => ({ ...prev, metaTitle: event.target.value }))} />
@@ -561,8 +562,8 @@ function ProductTypeStudio() {
           </div>
         )}
         <div className="form-grid form-grid-2">
-          <TextField docKey="product-type" label="Название" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
-          <TextField docKey="slug" label="Slug" value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
+          <TextField required docKey="product-type" label="Название" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
+          <TextField required docKey="slug" label="Slug" value={form.slug} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
           <TextAreaField docKey="description-generic" className="field-span-2" label="Описание" rows={3} value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
           <CheckboxField docKey="type-active" label="Тип активен" checked={form.isActive} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
         </div>
@@ -831,8 +832,8 @@ function AttributeStudio() {
           </Button>
         </div>
         <div className="form-grid">
-          <TextField docKey="attribute-group-name" label="Название группы" value={groupForm.name} onChange={(event) => setGroupForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
-          <TextField docKey="slug" label="Slug" value={groupForm.slug} onChange={(event) => setGroupForm((prev) => ({ ...prev, slug: event.target.value }))} />
+          <TextField required docKey="attribute-group-name" label="Название группы" value={groupForm.name} onChange={(event) => setGroupForm((prev) => ({ ...prev, name: event.target.value, slug: slugify(event.target.value) }))} />
+          <TextField required docKey="slug" label="Slug" value={groupForm.slug} onChange={(event) => setGroupForm((prev) => ({ ...prev, slug: event.target.value }))} />
           <TextAreaField docKey="description-generic" label="Описание" rows={3} value={groupForm.description} onChange={(event) => setGroupForm((prev) => ({ ...prev, description: event.target.value }))} />
           <TextField docKey="sort-order" label="Sort order" type="number" value={String(groupForm.sortOrder)} onChange={(event) => setGroupForm((prev) => ({ ...prev, sortOrder: Number(event.target.value) }))} />
           <CheckboxField docKey="group-active" label="Группа активна" checked={groupForm.isActive} onChange={(value) => setGroupForm((prev) => ({ ...prev, isActive: value }))} />
@@ -911,8 +912,8 @@ function AttributeStudio() {
               ...(groupsQuery.data?.items.map((item) => ({ value: item.id, label: item.name })) ?? []),
             ]}
           />
-          <TextField docKey="code" label="Код" value={definitionForm.code} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, code: event.target.value }))} />
-          <TextField docKey="category-attribute" label="Название" value={definitionForm.name} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, name: event.target.value }))} />
+          <TextField required docKey="code" label="Код" value={definitionForm.code} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, code: event.target.value }))} />
+          <TextField required docKey="category-attribute" label="Название" value={definitionForm.name} onChange={(event) => setDefinitionForm((prev) => ({ ...prev, name: event.target.value }))} />
           <SelectField
             docKey="data-type"
             label="Тип данных"
@@ -937,6 +938,7 @@ function AttributeStudio() {
               {definitionForm.options.map((item, index) => (
                 <div key={String(item.id ?? index)} className="matrix-row">
                   <TextField
+                    required
                     docKey="option-value"
                     label="Value"
                     value={String(item.value ?? '')}
@@ -950,6 +952,7 @@ function AttributeStudio() {
                     }
                   />
                   <TextField
+                    required
                     docKey="slug"
                     label="Slug"
                     value={String(item.slug ?? '')}

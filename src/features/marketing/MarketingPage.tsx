@@ -149,8 +149,8 @@ function CollectionForm({
 
   return (
     <>
-      <TextField docKey="collection" label="Название" value={String(form.name ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
-      <TextField docKey="slug" label="Slug" value={String(form.slug ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
+      <TextField required docKey="collection" label="Название" value={String(form.name ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
+      <TextField required docKey="slug" label="Slug" value={String(form.slug ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
       <TextAreaField docKey="description-generic" className="field-span-2" label="Описание" rows={3} value={String(form.description ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
       <SelectField
         docKey="collection-type"
@@ -274,7 +274,7 @@ function SeoForm({
 
   return (
     <>
-      <TextField docKey="slug" label="Slug" value={String(form.slug ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
+      <TextField required docKey="slug" label="Slug" value={String(form.slug ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))} />
       <SelectField
         docKey="page-type"
         label="Page type"
@@ -282,7 +282,7 @@ function SeoForm({
         onChange={(event) => setForm((prev) => ({ ...prev, pageType: event.target.value }))}
         options={seoLandingPageTypeValues.map((value) => ({ value, label: value }))}
       />
-      <TextField docKey="title" label="Title" value={String(form.title ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} />
+      <TextField required docKey="title" label="Title" value={String(form.title ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} />
       <TextField docKey="h1" label="H1" value={String(form.h1 ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, h1: event.target.value }))} />
       <SelectField
         docKey="category-select"
@@ -345,9 +345,9 @@ function SynonymsManager() {
       )}
       renderForm={(form, setForm) => (
         <>
-          <TextField docKey="term" label="Термин" value={String(form.term ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, term: event.target.value }))} />
+          <TextField required docKey="term" label="Термин" value={String(form.term ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, term: event.target.value }))} />
           <CheckboxField docKey="active-generic" label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
-          <TextAreaField docKey="synonyms-json" className="field-span-2" label="Synonyms JSON" rows={5} value={String(form.synonymsJson ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, synonymsJson: event.target.value }))} />
+          <TextAreaField required docKey="synonyms-json" className="field-span-2" label="Synonyms JSON" rows={5} value={String(form.synonymsJson ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, synonymsJson: event.target.value }))} />
         </>
       )}
     />
@@ -378,8 +378,8 @@ function RedirectsManager() {
       )}
       renderForm={(form, setForm) => (
         <>
-          <TextField docKey="search-query" label="Поисковый запрос" value={String(form.searchTerm ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, searchTerm: event.target.value }))} />
-          <TextField docKey="target-url" label="Target URL" value={String(form.targetUrl ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, targetUrl: event.target.value }))} />
+          <TextField required docKey="search-query" label="Поисковый запрос" value={String(form.searchTerm ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, searchTerm: event.target.value }))} />
+          <TextField required docKey="target-url" label="Target URL" value={String(form.targetUrl ?? '')} onChange={(event) => setForm((prev) => ({ ...prev, targetUrl: event.target.value }))} />
           <CheckboxField docKey="active-generic" label="Активен" checked={Boolean(form.isActive)} onChange={(value) => setForm((prev) => ({ ...prev, isActive: value }))} />
         </>
       )}
