@@ -18,6 +18,7 @@ import type {
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/ui/Fields';
+import { useSessionState } from '@/shared/lib/session-state';
 import { ResourceManager } from '@/shared/ui/ResourceManager';
 import { Tabs } from '@/shared/ui/Tabs';
 
@@ -25,7 +26,7 @@ type MarketingTab = 'collections' | 'seo' | 'synonyms' | 'redirects';
 type CategoryOptionNode = { id: string; name: string; depth: number; children: CategoryOptionNode[] };
 
 export function MarketingPage() {
-  const [tab, setTab] = useState<MarketingTab>('collections');
+  const [tab, setTab] = useSessionState<MarketingTab>('marketing:tab', 'collections');
 
   return (
     <div className="page-stack">

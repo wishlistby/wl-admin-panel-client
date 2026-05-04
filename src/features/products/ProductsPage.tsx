@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { productsApi, setupApi } from '@/shared/api/catalog-api';
@@ -19,6 +19,7 @@ import type {
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/ui/Fields';
+import { useSessionState } from '@/shared/lib/session-state';
 import { Tabs } from '@/shared/ui/Tabs';
 import { formatCurrency, formatDate, slugify } from '@/shared/lib/format';
 
@@ -148,8 +149,8 @@ type EditorState = {
 
 export function ProductsPage() {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<ProductTab>('overview');
-  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [tab, setTab] = useSessionState<ProductTab>('products:tab', 'overview');
+  const [selectedProductId, setSelectedProductId] = useSessionState<string>('products:selected-id', '');
   const bootstrapQuery = useQuery({ queryKey: ['catalog-bootstrap'], queryFn: setupApi.bootstrap });
   const listQuery = useQuery({
     queryKey: ['products-list'],
@@ -161,10 +162,15 @@ export function ProductsPage() {
     enabled: Boolean(selectedProductId),
   });
 
-  const [state, setState] = useState<EditorState>(createEmptyProductState());
+  const [state, setState, hasStoredState] = useSessionState<EditorState>('products:editor-state', createEmptyProductState);
+  const skipInitialServerHydrationRef = useRef(hasStoredState);
 
   useEffect(() => {
     if (!editorQuery.data) return;
+    if (skipInitialServerHydrationRef.current) {
+      skipInitialServerHydrationRef.current = false;
+      return;
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setState(mapEditorToState(editorQuery.data));
   }, [editorQuery.data]);
@@ -228,6 +234,7 @@ export function ProductsPage() {
           <Button
             variant="secondary"
             onClick={() => {
+              skipInitialServerHydrationRef.current = false;
               setSelectedProductId('');
               setState(createEmptyProductState());
             }}
@@ -239,7 +246,15 @@ export function ProductsPage() {
       >
         <div className="stack-list">
           {listQuery.data?.items.map((item) => (
-            <button key={item.id} type="button" className={`selection-row product-row ${selectedProductId === item.id ? 'is-active' : ''}`} onClick={() => setSelectedProductId(item.id)}>
+            <button
+              key={item.id}
+              type="button"
+              className={`selection-row product-row ${selectedProductId === item.id ? 'is-active' : ''}`}
+              onClick={() => {
+                skipInitialServerHydrationRef.current = false;
+                setSelectedProductId(item.id);
+              }}
+            >
               <div>
                 <strong>{item.name}</strong>
                 <span>

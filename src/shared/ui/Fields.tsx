@@ -32,7 +32,7 @@ function FieldHelp({ label, docKey, anchorId }: { label: string; docKey?: string
   }
 
   const returnTo = `${location.pathname}${location.search}#${anchorId}`;
-  const overviewHref = `/?section=${encodeURIComponent(doc.sectionId)}&returnTo=${encodeURIComponent(returnTo)}`;
+  const overviewHref = `/?section=${encodeURIComponent(doc.sectionId)}&field=${encodeURIComponent(doc.key)}&returnTo=${encodeURIComponent(returnTo)}`;
 
   return (
     <span className="field-help">

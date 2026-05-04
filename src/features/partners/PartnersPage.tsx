@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { partnerProductsApi } from '@/shared/api/partner-products-api';
 import type { PartnerProductMutationRequest } from '@/shared/api/types';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { CheckboxField, TextAreaField, TextField } from '@/shared/ui/Fields';
+import { useSessionState } from '@/shared/lib/session-state';
 import { Dialog } from '@/shared/ui/Dialog';
 
 const emptyForm = (): PartnerProductMutationRequest => ({
@@ -26,9 +26,9 @@ const emptyForm = (): PartnerProductMutationRequest => ({
 
 export function PartnersPage() {
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<PartnerProductMutationRequest>(emptyForm);
+  const [open, setOpen] = useSessionState('partners:open', false);
+  const [editingId, setEditingId] = useSessionState<string | null>('partners:editing-id', null);
+  const [form, setForm] = useSessionState<PartnerProductMutationRequest>('partners:form', emptyForm);
 
   const query = useQuery({
     queryKey: ['partner-products'],

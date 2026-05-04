@@ -1,15 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { setupApi } from '@/shared/api/catalog-api';
 import type { Brand, PriceList, Tag, Warehouse } from '@/shared/api/types';
 import { Card } from '@/shared/ui/Card';
 import { CheckboxField, TextAreaField, TextField } from '@/shared/ui/Fields';
+import { useSessionState } from '@/shared/lib/session-state';
 import { ResourceManager } from '@/shared/ui/ResourceManager';
 import { Tabs } from '@/shared/ui/Tabs';
 
 type SetupTab = 'brands' | 'priceLists' | 'warehouses' | 'tags';
 
 export function SetupPage() {
-  const [tab, setTab] = useState<SetupTab>('brands');
+  const [tab, setTab] = useSessionState<SetupTab>('setup:tab', 'brands');
 
   const tabs = useMemo(
     () => [

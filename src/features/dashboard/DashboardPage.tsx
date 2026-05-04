@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { setupApi } from '@/shared/api/catalog-api';
 import { Card } from '@/shared/ui/Card';
 import { catalogDocSections } from '@/features/dashboard/docs/catalogDocs';
+import { getFieldDoc, getFieldDocsBySection } from '@/features/dashboard/docs/fieldDocs';
 
 const statCards = [
   { key: 'brands', label: 'Бренды', icon: PackageSearch },
@@ -22,6 +23,7 @@ export function DashboardPage() {
     queryFn: setupApi.bootstrap,
   });
   const activeSectionId = searchParams.get('section') ?? '';
+  const activeFieldKey = searchParams.get('field') ?? '';
   const returnTo = searchParams.get('returnTo');
 
   const filteredSections = useMemo(() => {
@@ -31,12 +33,14 @@ export function DashboardPage() {
     }
 
     return catalogDocSections.filter((section) => {
+      const fieldDocs = getFieldDocsBySection(section.id);
       const haystack = [
         section.title,
         section.summary,
         ...section.description,
         ...(section.bullets ?? []),
         ...(section.relatedFields ?? []),
+        ...fieldDocs.flatMap((doc) => [doc.label, doc.short, doc.purpose, doc.example, ...doc.howToFill, ...doc.relations, ...doc.pitfalls]),
       ]
         .join(' ')
         .toLowerCase();
@@ -46,16 +50,18 @@ export function DashboardPage() {
   }, [query]);
 
   useEffect(() => {
-    if (!activeSectionId) {
+    if (!activeSectionId && !activeFieldKey) {
       return;
     }
 
     const timer = window.setTimeout(() => {
-      document.getElementById(activeSectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const fieldAnchor = activeFieldKey ? getFieldDoc(activeFieldKey)?.anchorId : null;
+      const targetId = fieldAnchor ?? activeSectionId;
+      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 80);
 
     return () => window.clearTimeout(timer);
-  }, [activeSectionId]);
+  }, [activeFieldKey, activeSectionId]);
 
   return (
     <div className="page-stack">
@@ -185,9 +191,70 @@ export function DashboardPage() {
                     <strong>Связанные поля</strong>
                     <div className="chip-cloud">
                       {section.relatedFields.map((field) => (
-                        <Link key={field} to={`/?section=${encodeURIComponent(section.id)}`} className="chip docs-chip-link">
+                        <Link
+                          key={field}
+                          to={`/?section=${encodeURIComponent(section.id)}${getFieldDoc(undefined, field) ? `&field=${encodeURIComponent(getFieldDoc(undefined, field)!.key)}` : ''}${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ''}`}
+                          className="chip docs-chip-link"
+                        >
                           {field}
                         </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {getFieldDocsBySection(section.id).length > 0 && (
+                  <div className="docs-field-list">
+                    <strong>Подробные расшифровки полей</strong>
+                    <div className="stack-list compact">
+                      {getFieldDocsBySection(section.id).map((doc) => (
+                        <article
+                          key={doc.key}
+                          id={doc.anchorId}
+                          className={`docs-field-card ${activeFieldKey === doc.key ? 'is-highlighted' : ''}`}
+                        >
+                          <div className="docs-field-head">
+                            <h4>{doc.label}</h4>
+                            <span>{doc.short}</span>
+                          </div>
+
+                          <div className="docs-field-block">
+                            <strong>Для чего нужно</strong>
+                            <p>{doc.purpose}</p>
+                          </div>
+
+                          <div className="docs-field-block">
+                            <strong>Как связано с другими сущностями</strong>
+                            <ul className="bullet-list docs-bullets">
+                              {doc.relations.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div className="docs-field-block">
+                            <strong>Как заполнять</strong>
+                            <ul className="bullet-list docs-bullets">
+                              {doc.howToFill.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div className="docs-field-block">
+                            <strong>Пример</strong>
+                            <p>{doc.example}</p>
+                          </div>
+
+                          <div className="docs-field-block">
+                            <strong>Частые ошибки</strong>
+                            <ul className="bullet-list docs-bullets">
+                              {doc.pitfalls.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </article>
                       ))}
                     </div>
                   </div>

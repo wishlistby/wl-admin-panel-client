@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { setupApi, structureApi } from '@/shared/api/catalog-api';
@@ -7,13 +7,14 @@ import type { CatalogCategoryNode } from '@/shared/api/types';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/ui/Fields';
+import { useSessionState } from '@/shared/lib/session-state';
 import { Tabs } from '@/shared/ui/Tabs';
 import { slugify } from '@/shared/lib/format';
 
 type StructureTab = 'categories' | 'productTypes' | 'attributes';
 
 export function StructurePage() {
-  const [tab, setTab] = useState<StructureTab>('categories');
+  const [tab, setTab] = useSessionState<StructureTab>('structure:tab', 'categories');
 
   return (
     <div className="page-stack">
@@ -43,8 +44,8 @@ function CategoryStudio() {
   const queryClient = useQueryClient();
   const bootstrapQuery = useQuery({ queryKey: ['catalog-bootstrap'], queryFn: setupApi.bootstrap });
   const categoriesQuery = useQuery({ queryKey: ['categories-tree'], queryFn: structureApi.categories.tree });
-  const [selected, setSelected] = useState<CatalogCategoryNode | null>(null);
-  const [form, setForm] = useState({
+  const [selectedId, setSelectedId] = useSessionState<string>('structure:categories:selected-id', '');
+  const [form, setForm, hasStoredForm] = useSessionState('structure:categories:form', {
     parentId: '',
     name: '',
     slug: '',
@@ -61,9 +62,16 @@ function CategoryStudio() {
     propagateVisibility: false,
     attributes: [] as Array<Record<string, unknown>>,
   });
+  const selected = useMemo(() => findNodeById(categoriesQuery.data ?? [], selectedId), [categoriesQuery.data, selectedId]);
+  const skipNodeHydrationRef = useRef(hasStoredForm);
+  const skipDetailHydrationRef = useRef(hasStoredForm);
 
   useEffect(() => {
     if (!selected) return;
+    if (skipNodeHydrationRef.current) {
+      skipNodeHydrationRef.current = false;
+      return;
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm({
       parentId: selected.parentId ?? '',
@@ -85,13 +93,17 @@ function CategoryStudio() {
   }, [selected]);
 
   const detailQuery = useQuery({
-    queryKey: ['category-detail', selected?.id],
-    queryFn: () => structureApi.categories.getById(selected!.id),
-    enabled: Boolean(selected?.id),
+    queryKey: ['category-detail', selectedId],
+    queryFn: () => structureApi.categories.getById(selectedId),
+    enabled: Boolean(selectedId),
   });
 
   useEffect(() => {
     if (!detailQuery.data) return;
+    if (skipDetailHydrationRef.current) {
+      skipDetailHydrationRef.current = false;
+      return;
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm((prev) => ({
       ...prev,
@@ -182,7 +194,9 @@ function CategoryStudio() {
           <Button
             variant="secondary"
             onClick={() => {
-              setSelected(null);
+              skipNodeHydrationRef.current = false;
+              skipDetailHydrationRef.current = false;
+              setSelectedId('');
               setForm({
                 parentId: '',
                 name: '',
@@ -209,7 +223,16 @@ function CategoryStudio() {
       >
         <div className="tree">
           {(categoriesQuery.data ?? []).map((node) => (
-            <CategoryTreeNode key={node.id} node={node} activeId={selected?.id} onSelect={setSelected} />
+            <CategoryTreeNode
+              key={node.id}
+              node={node}
+              activeId={selectedId}
+              onSelect={(node) => {
+                skipNodeHydrationRef.current = false;
+                skipDetailHydrationRef.current = false;
+                setSelectedId(node.id);
+              }}
+            />
           ))}
         </div>
       </Card>
@@ -223,7 +246,7 @@ function CategoryStudio() {
               variant="danger"
               onClick={() =>
                 structureApi.categories.remove(selected.id).then(async () => {
-                  setSelected(null);
+                  setSelectedId('');
                   await queryClient.invalidateQueries({ queryKey: ['categories-tree'] });
                 })
               }
@@ -410,23 +433,28 @@ function ProductTypeStudio() {
     queryFn: () => structureApi.productTypes.list({ page: 1, pageSize: 100, includeInactive: true, search: '' }),
   });
 
-  const [selectedId, setSelectedId] = useState<string>('');
+  const [selectedId, setSelectedId] = useSessionState<string>('structure:product-types:selected-id', '');
   const detailQuery = useQuery({
     queryKey: ['product-type-detail', selectedId],
     queryFn: () => structureApi.productTypes.getDetail(selectedId),
     enabled: Boolean(selectedId),
   });
 
-  const [form, setForm] = useState({
+  const [form, setForm, hasStoredForm] = useSessionState('structure:product-types:form', {
     name: '',
     slug: '',
     description: '',
     isActive: true,
     attributes: [] as Array<Record<string, unknown>>,
   });
+  const skipDetailHydrationRef = useRef(hasStoredForm);
 
   useEffect(() => {
     if (!detailQuery.data) return;
+    if (skipDetailHydrationRef.current) {
+      skipDetailHydrationRef.current = false;
+      return;
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm({
       name: detailQuery.data.productType.name,
@@ -458,6 +486,7 @@ function ProductTypeStudio() {
         await structureApi.productTypes.update(targetId, payload);
       } else {
         targetId = await structureApi.productTypes.create(payload);
+        skipDetailHydrationRef.current = false;
         setSelectedId(targetId);
       }
 
@@ -486,6 +515,7 @@ function ProductTypeStudio() {
           <Button
             variant="secondary"
             onClick={() => {
+              skipDetailHydrationRef.current = false;
               setSelectedId('');
               setForm({ name: '', slug: '', description: '', isActive: true, attributes: [] });
             }}
@@ -496,7 +526,15 @@ function ProductTypeStudio() {
       >
         <div className="stack-list">
           {productTypesQuery.data?.items.map((item: { id: string; name: string; slug: string }) => (
-            <button key={item.id} type="button" className={`selection-row ${selectedId === item.id ? 'is-active' : ''}`} onClick={() => setSelectedId(item.id)}>
+            <button
+              key={item.id}
+              type="button"
+              className={`selection-row ${selectedId === item.id ? 'is-active' : ''}`}
+              onClick={() => {
+                skipDetailHydrationRef.current = false;
+                setSelectedId(item.id);
+              }}
+            >
               <strong>{item.name}</strong>
               <span>{item.slug}</span>
             </button>
@@ -511,6 +549,7 @@ function ProductTypeStudio() {
               variant="danger"
               onClick={() =>
                 structureApi.productTypes.remove(selectedId).then(async () => {
+                  skipDetailHydrationRef.current = false;
                   setSelectedId('');
                   setForm({ name: '', slug: '', description: '', isActive: true, attributes: [] });
                   await queryClient.invalidateQueries({ queryKey: ['product-types-list'] });
@@ -1021,4 +1060,19 @@ function getDescendants(nodes: CatalogCategoryNode[], targetId: string): Catalog
   }
 
   return [];
+}
+
+function findNodeById(nodes: CatalogCategoryNode[], targetId: string): CatalogCategoryNode | null {
+  for (const node of nodes) {
+    if (node.id === targetId) {
+      return node;
+    }
+
+    const nested = findNodeById(node.children, targetId);
+    if (nested) {
+      return nested;
+    }
+  }
+
+  return null;
 }

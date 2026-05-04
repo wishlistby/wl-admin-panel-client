@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
 import type { AdminPagedResult, BaseEntity } from '@/shared/api/types';
@@ -6,6 +6,7 @@ import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { Dialog } from '@/shared/ui/Dialog';
 import { formatDate } from '@/shared/lib/format';
+import { useSessionState } from '@/shared/lib/session-state';
 
 interface ResourceManagerProps<T extends BaseEntity, TForm extends Record<string, unknown>> {
   queryKey: string;
@@ -35,11 +36,11 @@ export function ResourceManager<T extends BaseEntity, TForm extends Record<strin
   renderForm,
 }: ResourceManagerProps<T, TForm>) {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useSessionState(`${queryKey}:search`, '');
   const deferredSearch = useDeferredValue(search);
-  const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<TForm>(() => toForm());
+  const [open, setOpen] = useSessionState(`${queryKey}:open`, false);
+  const [editingId, setEditingId] = useSessionState<string | null>(`${queryKey}:editing-id`, null);
+  const [form, setForm] = useSessionState<TForm>(`${queryKey}:form`, () => toForm());
 
   const listRequest = useMemo(
     () => ({ page: 1, pageSize: 100, search: deferredSearch, includeInactive: true }),

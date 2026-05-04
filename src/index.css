@@ -774,6 +774,41 @@ textarea {
   text-decoration: none;
 }
 
+.docs-field-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.docs-field-card {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.docs-field-card.is-highlighted {
+  border-color: rgba(92, 99, 255, 0.38);
+  box-shadow: 0 16px 36px rgba(92, 99, 255, 0.12);
+}
+
+.docs-field-head,
+.docs-field-block {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.docs-field-head h4,
+.docs-field-block p {
+  margin: 0;
+}
+
+.docs-field-head span {
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
 @media (max-width: 1200px) {
   .shell,
   .grid-split,
