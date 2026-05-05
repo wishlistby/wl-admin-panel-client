@@ -16,8 +16,13 @@ const queryClient = new QueryClient({
       const title =
         error instanceof HttpError && error.code === 'catalog.priceList.inUse'
           ? 'Нельзя удалить прайс-лист'
+          : error instanceof HttpError && error.code === 'catalog.product.validation'
+            ? 'Проверьте карточку товара'
+          : error instanceof HttpError &&
+              ['catalog.attributeDefinition.duplicateCode', 'catalog.attributeDefinition.groupRequired', 'catalog.attributeDefinition.groupNotFound'].includes(error.code ?? '')
+            ? 'Не удалось сохранить атрибут'
           : error instanceof HttpError && error.details.length > 0
-            ? 'Проверьте обязательные поля'
+            ? 'Проверьте заполнение формы'
             : 'Не удалось выполнить действие';
 
       pushErrorNotification(

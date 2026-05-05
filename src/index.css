@@ -588,6 +588,74 @@ textarea {
   background: rgba(255, 255, 255, 0.78);
 }
 
+.data-grid-shell {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.data-grid {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.data-grid th,
+.data-grid td {
+  padding: 0.9rem 1rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(96, 108, 210, 0.12);
+}
+
+.data-grid th {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(92, 99, 255, 0.06);
+}
+
+.data-grid tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-grid-row.is-clickable {
+  cursor: pointer;
+}
+
+.data-grid-row.is-clickable:hover {
+  background: rgba(92, 99, 255, 0.05);
+}
+
+.data-grid-row.is-selected {
+  background: rgba(92, 99, 255, 0.12);
+}
+
+.data-grid-main {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.data-grid-main span {
+  color: var(--text-soft);
+}
+
+.data-grid-col-small {
+  white-space: nowrap;
+  width: 1%;
+}
+
+.data-grid-col-date {
+  white-space: nowrap;
+}
+
+.data-grid-empty {
+  color: var(--text-soft);
+}
+
 .selection-row,
 .tree-button {
   width: 100%;

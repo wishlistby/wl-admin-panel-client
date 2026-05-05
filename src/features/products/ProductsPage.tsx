@@ -16,6 +16,7 @@ import {
 import type {
   CatalogProductEditor,
 } from '@/shared/api/types';
+import { HttpError } from '@/shared/api/http-error';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/ui/Fields';
@@ -177,6 +178,15 @@ export function ProductsPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const validationErrors = validateProductState(state);
+      if (validationErrors.length > 0) {
+        throw new HttpError('Проверьте заполнение товара. Есть обязательные поля, которые пока не заполнены.', {
+          status: 400,
+          code: 'catalog.product.validation',
+          details: validationErrors,
+        });
+      }
+
       const payload = toSaveRequest(state);
       if (selectedProductId) {
         return productsApi.update({ id: selectedProductId, payload });
@@ -993,17 +1003,17 @@ function toSaveRequest(state: EditorState) {
       sortOrder: item.sortOrder,
       isActive: item.isActive,
     })),
-    productAttributes: state.productAttributes.map(cleanAttribute),
-    productMedia: state.productMedia.map(cleanMedia),
-    productPrices: state.productPrices.map(cleanPrice),
+    productAttributes: state.productAttributes.map(cleanAttribute).filter(isPresent),
+    productMedia: state.productMedia.map(cleanMedia).filter(isPresent),
+    productPrices: state.productPrices.map(cleanPrice).filter(isPresent),
     tags: state.tags.map((item) => ({ id: item.id, tagId: item.tagId, isActive: item.isActive })),
-    collections: state.collections.map((item) => ({
+    collections: state.collections.filter(hasCollectionValue).map((item) => ({
       id: item.id,
       productCollectionId: item.productCollectionId,
       sortOrder: item.sortOrder,
       isActive: item.isActive,
     })),
-    relations: state.relations.map((item) => ({
+    relations: state.relations.filter(hasRelationValue).map((item) => ({
       id: item.id,
       targetProductId: item.targetProductId,
       relationType: item.relationType,
@@ -1027,24 +1037,21 @@ function toSaveRequest(state: EditorState) {
       isDefault: item.isDefault,
       isAvailable: item.isAvailable,
       isActive: item.isActive,
-      attributes: item.attributes.map(cleanAttribute),
-      inventoryStocks: item.inventoryStocks.map((stock: { id: string; warehouseId: string; quantity: number; reservedQuantity: number; availableQuantity: number; isActive: boolean }) => ({
-        id: stock.id,
-        warehouseId: stock.warehouseId,
-        quantity: Number(stock.quantity) || 0,
-        reservedQuantity: Number(stock.reservedQuantity) || 0,
-        availableQuantity: Number(stock.availableQuantity) || 0,
-        isActive: stock.isActive,
-      })),
-      prices: item.prices.map(cleanPrice),
-      media: item.media.map(cleanMedia),
+      attributes: item.attributes.map(cleanAttribute).filter(isPresent),
+      inventoryStocks: item.inventoryStocks.map(cleanInventoryStock).filter(isPresent),
+      prices: item.prices.map(cleanPrice).filter(isPresent),
+      media: item.media.map(cleanMedia).filter(isPresent),
     })),
   };
 }
 
 function cleanAttribute(item: ProductAttributeDraft) {
+  if (!hasAttributeValue(item)) {
+    return null;
+  }
+
   return {
-    id: item.id,
+    id: item.id || undefined,
     attributeDefinitionId: item.attributeDefinitionId,
     attributeOptionId: item.attributeOptionId || null,
     valueText: item.valueText || null,
@@ -1057,10 +1064,14 @@ function cleanAttribute(item: ProductAttributeDraft) {
 }
 
 function cleanMedia(item: ProductMediaDraft) {
+  if (!hasMediaValue(item)) {
+    return null;
+  }
+
   return {
-    id: item.id,
+    id: item.id || undefined,
     productVariantId: item.productVariantId || null,
-    url: item.url,
+    url: item.url.trim(),
     altText: item.altText || null,
     title: item.title || null,
     mediaType: mediaTypeEnum.toApi(item.mediaType),
@@ -1071,8 +1082,12 @@ function cleanMedia(item: ProductMediaDraft) {
 }
 
 function cleanPrice(item: ProductPriceDraft) {
+  if (!hasPriceValue(item)) {
+    return null;
+  }
+
   return {
-    id: item.id,
+    id: item.id || undefined,
     productVariantId: item.productVariantId || null,
     priceListId: item.priceListId,
     price: Number(item.price) || 0,
@@ -1080,6 +1095,21 @@ function cleanPrice(item: ProductPriceDraft) {
     currency: item.currency,
     validFrom: item.validFrom || null,
     validTo: item.validTo || null,
+    isActive: item.isActive,
+  };
+}
+
+function cleanInventoryStock(item: InventoryStockDraft) {
+  if (!hasInventoryValue(item)) {
+    return null;
+  }
+
+  return {
+    id: item.id || undefined,
+    warehouseId: item.warehouseId,
+    quantity: Number(item.quantity) || 0,
+    reservedQuantity: Number(item.reservedQuantity) || 0,
+    availableQuantity: Number(item.availableQuantity) || 0,
     isActive: item.isActive,
   };
 }
@@ -1123,4 +1153,201 @@ function flattenCategories(
   nodes: CategoryTreeOption[],
 ): Array<{ id: string; name: string; depth: number }> {
   return nodes.flatMap((node) => [{ id: node.id, name: node.name, depth: node.depth }, ...flattenCategories(node.children)]);
+}
+
+function validateProductState(state: EditorState) {
+  const errors: Array<{ field?: string; message: string }> = [];
+
+  if (!state.product.name.trim()) {
+    errors.push({ field: 'Product.Name', message: 'Укажите название товара.' });
+  }
+
+  if (!state.product.slug.trim()) {
+    errors.push({ field: 'Product.Slug', message: 'Укажите slug товара.' });
+  }
+
+  if (!state.product.productTypeId) {
+    errors.push({ field: 'Product.ProductTypeId', message: 'Выберите тип товара.' });
+  }
+
+  if (!state.product.primaryCategoryId) {
+    errors.push({ field: 'Product.PrimaryCategoryId', message: 'Выберите основную категорию.' });
+  }
+
+  if (state.variants.length === 0) {
+    errors.push({ field: 'Variants', message: 'Добавьте хотя бы один SKU, чтобы товар можно было сохранить.' });
+    return errors;
+  }
+
+  state.variants.forEach((variant, index) => {
+    const fieldPrefix = `Variants[${index}]`;
+    const variantLabel = index === 0 ? 'первого SKU' : `SKU #${index + 1}`;
+
+    if (!variant.name.trim()) {
+      errors.push({ field: `${fieldPrefix}.Name`, message: `Укажите название ${variantLabel}.` });
+    }
+
+    if (!variant.sku.trim()) {
+      errors.push({ field: `${fieldPrefix}.Sku`, message: `Укажите артикул ${variantLabel}.` });
+    }
+
+    if (!variant.currency.trim()) {
+      errors.push({ field: `${fieldPrefix}.Currency`, message: `Укажите валюту ${variantLabel}.` });
+    }
+
+    variant.attributes.forEach((attribute, attributeIndex) => {
+      if (!hasAttributeValue(attribute)) {
+        return;
+      }
+
+      if (!attribute.attributeDefinitionId) {
+        errors.push({
+          field: `${fieldPrefix}.Attributes[${attributeIndex}].AttributeDefinitionId`,
+          message: `Выберите атрибут для ${variantLabel} в строке #${attributeIndex + 1}.`,
+        });
+      }
+    });
+
+    variant.inventoryStocks.forEach((stock, stockIndex) => {
+      if (!hasInventoryValue(stock)) {
+        return;
+      }
+
+      if (!stock.warehouseId) {
+        errors.push({
+          field: `${fieldPrefix}.InventoryStocks[${stockIndex}].WarehouseId`,
+          message: `Выберите склад для ${variantLabel} в строке остатка #${stockIndex + 1}.`,
+        });
+      }
+    });
+
+    variant.prices.forEach((price, priceIndex) => {
+      if (!hasPriceValue(price)) {
+        return;
+      }
+
+      if (!price.priceListId) {
+        errors.push({
+          field: `${fieldPrefix}.Prices[${priceIndex}].PriceListId`,
+          message: `Выберите прайс-лист для ${variantLabel} в строке цены #${priceIndex + 1}.`,
+        });
+      }
+    });
+
+    variant.media.forEach((media, mediaIndex) => {
+      if (!hasMediaValue(media)) {
+        return;
+      }
+
+      if (!media.url.trim()) {
+        errors.push({
+          field: `${fieldPrefix}.Media[${mediaIndex}].Url`,
+          message: `Укажите URL медиа для ${variantLabel} в строке #${mediaIndex + 1}.`,
+        });
+      }
+    });
+  });
+
+  state.productAttributes.forEach((attribute, index) => {
+    if (!hasAttributeValue(attribute)) {
+      return;
+    }
+
+    if (!attribute.attributeDefinitionId) {
+      errors.push({
+        field: `ProductAttributes[${index}].AttributeDefinitionId`,
+        message: `Выберите общий атрибут товара в строке #${index + 1}.`,
+      });
+    }
+  });
+
+  state.productPrices.forEach((price, index) => {
+    if (!hasPriceValue(price)) {
+      return;
+    }
+
+    if (!price.priceListId) {
+      errors.push({
+        field: `ProductPrices[${index}].PriceListId`,
+        message: `Выберите прайс-лист для цены товара в строке #${index + 1}.`,
+      });
+    }
+  });
+
+  state.productMedia.forEach((media, index) => {
+    if (!hasMediaValue(media)) {
+      return;
+    }
+
+    if (!media.url.trim()) {
+      errors.push({
+        field: `ProductMedia[${index}].Url`,
+        message: `Укажите URL медиа товара в строке #${index + 1}.`,
+      });
+    }
+  });
+
+  state.collections.forEach((collection, index) => {
+    if (!hasCollectionValue(collection)) {
+      return;
+    }
+
+    if (!collection.productCollectionId) {
+      errors.push({
+        field: `Collections[${index}].ProductCollectionId`,
+        message: `Выберите подборку в строке #${index + 1}.`,
+      });
+    }
+  });
+
+  state.relations.forEach((relation, index) => {
+    if (!hasRelationValue(relation)) {
+      return;
+    }
+
+    if (!relation.targetProductId) {
+      errors.push({
+        field: `Relations[${index}].TargetProductId`,
+        message: `Выберите связанный товар в строке #${index + 1}.`,
+      });
+    }
+  });
+
+  return errors;
+}
+
+function hasAttributeValue(item: ProductAttributeDraft) {
+  return Boolean(
+    item.attributeDefinitionId ||
+      item.attributeOptionId ||
+      (item.valueText && item.valueText.trim()) ||
+      item.valueNumber !== null ||
+      item.valueBoolean !== null ||
+      item.valueDate ||
+      (item.valueJson && item.valueJson.trim()),
+  );
+}
+
+function hasPriceValue(item: ProductPriceDraft) {
+  return Boolean(item.priceListId || item.price !== 0 || item.oldPrice !== null || item.validFrom || item.validTo);
+}
+
+function hasInventoryValue(item: InventoryStockDraft) {
+  return Boolean(item.warehouseId || item.quantity !== 0 || item.reservedQuantity !== 0 || item.availableQuantity !== 0);
+}
+
+function hasMediaValue(item: ProductMediaDraft) {
+  return Boolean(item.url.trim() || (item.altText && item.altText.trim()) || (item.title && item.title.trim()));
+}
+
+function hasCollectionValue(item: ProductCollectionDraft) {
+  return Boolean(item.productCollectionId);
+}
+
+function hasRelationValue(item: ProductRelationDraft) {
+  return Boolean(item.targetProductId);
+}
+
+function isPresent<T>(value: T | null): value is T {
+  return value !== null;
 }

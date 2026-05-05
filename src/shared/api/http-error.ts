@@ -20,12 +20,26 @@ const fieldLabelMap: Record<string, string> = {
   'Product.Slug': 'Slug товара',
   'Product.ProductTypeId': 'Тип товара',
   'Product.PrimaryCategoryId': 'Основная категория',
+  'Product.Status': 'Статус',
+  'Product.Visibility': 'Видимость',
   'ProductVariant.Name': 'Название SKU',
   'ProductVariant.Sku': 'SKU',
   'Payload.Name': 'Название',
   'Payload.Slug': 'Slug',
   'Payload.Code': 'Код',
   'Payload.Currency': 'Валюта',
+  'Variants[0].Sku': 'SKU первого варианта',
+  'Variants[0].Name': 'Название первого SKU',
+  'Variants[0].Currency': 'Валюта первого SKU',
+  'Variants[0].InventoryStocks[0].WarehouseId': 'Склад первого остатка',
+  'Variants[0].Attributes[0].AttributeDefinitionId': 'Атрибут первого SKU',
+  'Variants[0].Prices[0].PriceListId': 'Прайс-лист первой цены SKU',
+  'Variants[0].Media[0].Url': 'URL первого медиа SKU',
+  'ProductAttributes[0].AttributeDefinitionId': 'Общий атрибут товара',
+  'ProductPrices[0].PriceListId': 'Прайс-лист цены товара',
+  'ProductMedia[0].Url': 'URL медиа товара',
+  'Collections[0].ProductCollectionId': 'Подборка',
+  'Relations[0].TargetProductId': 'Связанный товар',
 };
 
 function getFieldLabel(field?: string) {
@@ -35,6 +49,14 @@ function getFieldLabel(field?: string) {
 
   if (fieldLabelMap[field]) {
     return fieldLabelMap[field];
+  }
+
+  const normalizedIndexedField = field
+    .replace(/\[\d+\]/g, '[0]')
+    .replace(/^\$\./, '');
+
+  if (fieldLabelMap[normalizedIndexedField]) {
+    return fieldLabelMap[normalizedIndexedField];
   }
 
   const parts = field.split('.');

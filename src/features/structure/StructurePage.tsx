@@ -6,10 +6,11 @@ import { attributeDataTypeEnum, attributeDataTypeValues } from '@/shared/api/cat
 import type { CatalogCategoryNode } from '@/shared/api/types';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
+import { DataGrid } from '@/shared/ui/DataGrid';
 import { CheckboxField, SelectField, TextAreaField, TextField } from '@/shared/ui/Fields';
 import { useSessionState } from '@/shared/lib/session-state';
 import { Tabs } from '@/shared/ui/Tabs';
-import { slugify } from '@/shared/lib/format';
+import { formatDate, slugify } from '@/shared/lib/format';
 
 type StructureTab = 'categories' | 'productTypes' | 'attributes';
 
@@ -246,20 +247,32 @@ function CategoryStudio() {
           </Button>
         }
       >
-        <div className="tree">
-          {(categoriesQuery.data ?? []).map((node) => (
-            <CategoryTreeNode
-              key={node.id}
-              node={node}
-              activeId={selectedId}
-              onSelect={(node) => {
-                skipNodeHydrationRef.current = false;
-                skipDetailHydrationRef.current = false;
-                setSelectedId(node.id);
-              }}
-            />
-          ))}
-        </div>
+        <DataGrid
+          rows={flatCategories}
+          rowKey={(row) => row.id}
+          selectedKey={selectedId}
+          emptyMessage="Категории ещё не заведены."
+          onRowClick={(row) => {
+            skipNodeHydrationRef.current = false;
+            skipDetailHydrationRef.current = false;
+            setSelectedId(row.id);
+          }}
+          columns={[
+            {
+              key: 'name',
+              header: 'Категория',
+              render: (row) => (
+                <div className="data-grid-main">
+                  <strong>{`${'· '.repeat(row.depth)}${row.name}`}</strong>
+                  <span>{row.slug}</span>
+                </div>
+              ),
+            },
+            { key: 'path', header: 'Путь', render: (row) => row.fullPath || '—' },
+            { key: 'depth', header: 'Глубина', className: 'data-grid-col-small', render: (row) => row.depth },
+            { key: 'active', header: 'Статус', className: 'data-grid-col-small', render: (row) => (row.isActive ? 'Активна' : 'Скрыта') },
+          ]}
+        />
       </Card>
 
       <Card
@@ -550,22 +563,30 @@ function ProductTypeStudio() {
           </Button>
         }
       >
-        <div className="stack-list">
-          {productTypesQuery.data?.items.map((item: { id: string; name: string; slug: string }) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`selection-row ${selectedId === item.id ? 'is-active' : ''}`}
-              onClick={() => {
-                skipDetailHydrationRef.current = false;
-                setSelectedId(item.id);
-              }}
-            >
-              <strong>{item.name}</strong>
-              <span>{item.slug}</span>
-            </button>
-          ))}
-        </div>
+        <DataGrid
+          rows={productTypesQuery.data?.items ?? []}
+          rowKey={(row) => row.id}
+          selectedKey={selectedId}
+          emptyMessage="Типы товаров ещё не созданы."
+          onRowClick={(row) => {
+            skipDetailHydrationRef.current = false;
+            setSelectedId(row.id);
+          }}
+          columns={[
+            {
+              key: 'name',
+              header: 'Тип товара',
+              render: (row) => (
+                <div className="data-grid-main">
+                  <strong>{row.name}</strong>
+                  <span>{row.slug}</span>
+                </div>
+              ),
+            },
+            { key: 'active', header: 'Статус', className: 'data-grid-col-small', render: (row) => (row.isActive ? 'Активен' : 'Выключен') },
+            { key: 'updated', header: 'Обновлено', className: 'data-grid-col-date', render: (row) => formatDate(row.lastUpdate) },
+          ]}
+        />
       </Card>
 
       <Card title="Редактор типа товара" description="Внутри сразу настраиваются обязательные атрибуты и фасетные правила.">
@@ -698,6 +719,10 @@ function AttributeStudio() {
     queryKey: ['attribute-groups-list'],
     queryFn: () => structureApi.attributeGroups.list({ page: 1, pageSize: 100, includeInactive: true, search: '' }),
   });
+  const definitionsQuery = useQuery({
+    queryKey: ['attribute-definitions-list'],
+    queryFn: () => structureApi.attributeDefinitions.list({ page: 1, pageSize: 200, includeInactive: true, search: '' }),
+  });
 
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   const [selectedDefinitionId, setSelectedDefinitionId] = useState<string>('');
@@ -813,10 +838,16 @@ function AttributeStudio() {
       await structureApi.attributeDefinitions.replaceOptions(targetId, definitionForm.options);
     },
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['attribute-definitions-list'] });
       await queryClient.invalidateQueries({ queryKey: ['attribute-group-detail', selectedGroupId] });
       if (selectedDefinitionId) await queryClient.invalidateQueries({ queryKey: ['attribute-definition-detail', selectedDefinitionId] });
     },
   });
+
+  const groupNameMap = useMemo(
+    () => new Map((groupsQuery.data?.items ?? []).map((item) => [item.id, item.name])),
+    [groupsQuery.data],
+  );
 
   return (
     <div className="grid-three">
@@ -869,21 +900,31 @@ function AttributeStudio() {
       </Card>
 
       <Card title="Атрибуты группы" description="Определения характеристик, которые потом назначаются типам товара.">
-        <div className="stack-list">
-          {(groupDetailQuery.data?.definitions ?? []).map((item) => (
-            <button
-              key={item.definition.id}
-              type="button"
-              className={`selection-row ${selectedDefinitionId === item.definition.id ? 'is-active' : ''}`}
-              onClick={() => setSelectedDefinitionId(item.definition.id)}
-            >
-              <strong>{item.definition.name}</strong>
-              <span>
-                {item.definition.code} · {item.definition.dataType}
-              </span>
-            </button>
-          ))}
-        </div>
+        <DataGrid
+          rows={definitionsQuery.data?.items ?? []}
+          rowKey={(row) => row.id}
+          selectedKey={selectedDefinitionId}
+          emptyMessage="Атрибуты ещё не созданы."
+          onRowClick={(row) => {
+            setSelectedGroupId(row.attributeGroupId);
+            setSelectedDefinitionId(row.id);
+          }}
+          columns={[
+            {
+              key: 'name',
+              header: 'Атрибут',
+              render: (row) => (
+                <div className="data-grid-main">
+                  <strong>{row.name}</strong>
+                  <span>{row.code}</span>
+                </div>
+              ),
+            },
+            { key: 'group', header: 'Группа', render: (row) => groupNameMap.get(row.attributeGroupId) ?? '—' },
+            { key: 'type', header: 'Тип', className: 'data-grid-col-small', render: (row) => attributeDataTypeEnum.fromApi(row.dataType) },
+            { key: 'active', header: 'Статус', className: 'data-grid-col-small', render: (row) => (row.isActive ? 'Активен' : 'Выключен') },
+          ]}
+        />
         <Button
           variant="secondary"
           onClick={() => {
@@ -1043,32 +1084,6 @@ function AttributeStudio() {
           </Button>
         </div>
       </Card>
-    </div>
-  );
-}
-
-function CategoryTreeNode({
-  node,
-  activeId,
-  onSelect,
-}: {
-  node: CatalogCategoryNode;
-  activeId?: string;
-  onSelect: (node: CatalogCategoryNode) => void;
-}) {
-  return (
-    <div className="tree-node">
-      <button type="button" className={`tree-button ${activeId === node.id ? 'is-active' : ''}`} onClick={() => onSelect(node)}>
-        <span>{node.name}</span>
-        <small>{node.slug}</small>
-      </button>
-      {node.children.length > 0 && (
-        <div className="tree-children">
-          {node.children.map((child) => (
-            <CategoryTreeNode key={child.id} node={child} activeId={activeId} onSelect={onSelect} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

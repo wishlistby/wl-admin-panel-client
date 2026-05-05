@@ -15,15 +15,26 @@ function extractValidationDetails(source: unknown): HttpErrorDetails[] {
         }
 
         if (typeof item === 'object' && item !== null) {
-          const candidate = item as { field?: unknown; message?: unknown; messages?: unknown };
-          if (typeof candidate.message === 'string') {
-            return [{ field: typeof candidate.field === 'string' ? candidate.field : undefined, message: candidate.message }];
+          const candidate = item as {
+            field?: unknown;
+            Field?: unknown;
+            message?: unknown;
+            Message?: unknown;
+            messages?: unknown;
+            Messages?: unknown;
+          };
+          const field = typeof candidate.field === 'string' ? candidate.field : typeof candidate.Field === 'string' ? candidate.Field : undefined;
+          const message = typeof candidate.message === 'string' ? candidate.message : typeof candidate.Message === 'string' ? candidate.Message : undefined;
+          const messages = Array.isArray(candidate.messages) ? candidate.messages : Array.isArray(candidate.Messages) ? candidate.Messages : undefined;
+
+          if (typeof message === 'string') {
+            return [{ field, message }];
           }
 
-          if (Array.isArray(candidate.messages)) {
-            return candidate.messages
+          if (Array.isArray(messages)) {
+            return messages
               .filter((message): message is string => typeof message === 'string')
-              .map((message) => ({ field: typeof candidate.field === 'string' ? candidate.field : undefined, message }));
+              .map((message) => ({ field, message }));
           }
         }
 
