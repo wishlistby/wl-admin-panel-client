@@ -14,10 +14,42 @@ export function SetupPage() {
 
   const tabs = useMemo(
     () => [
-      { id: 'brands', label: 'Бренды' },
-      { id: 'priceLists', label: 'Прайс-листы' },
-      { id: 'warehouses', label: 'Склады' },
-      { id: 'tags', label: 'Теги' },
+      {
+        id: 'brands',
+        label: 'Бренды',
+        help: {
+          short: 'Бренд участвует в карточке товара, фильтрах, брендовых страницах и SEO-контексте.',
+          sectionId: 'product-card',
+          linkLabel: 'Читать про карточку и бренд',
+        },
+      },
+      {
+        id: 'priceLists',
+        label: 'Прайс-листы',
+        help: {
+          short: 'Прайс-лист задаёт ценовой контур: розница, B2B, VIP, валюта или отдельные коммерческие условия.',
+          sectionId: 'pricing',
+          linkLabel: 'Читать про цены и прайс-листы',
+        },
+      },
+      {
+        id: 'warehouses',
+        label: 'Склады',
+        help: {
+          short: 'Склады нужны для остатков SKU и логистики. Остатки в модели считаются на уровне варианта.',
+          sectionId: 'inventory',
+          linkLabel: 'Читать про склад и доступность',
+        },
+      },
+      {
+        id: 'tags',
+        label: 'Теги',
+        help: {
+          short: 'Тег — это мягкая тематическая классификация: подарок, эко, для офиса и похожие маркетинговые сценарии.',
+          sectionId: 'marketing',
+          linkLabel: 'Читать про маркетинг и теги',
+        },
+      },
     ],
     [],
   );
@@ -25,6 +57,7 @@ export function SetupPage() {
   return (
     <div className="page-stack">
       <Card
+        className="setup-tabs-card"
         title="Справочники каталога"
         description="Базовые сущности, без которых редактор товара становится шумным и неудобным."
       >

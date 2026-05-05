@@ -292,11 +292,21 @@ textarea {
 }
 
 .card {
+  position: relative;
+  overflow: visible;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 24px;
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
+}
+
+.setup-tabs-card {
+  z-index: 12;
+}
+
+.tabs-shell-card {
+  z-index: 12;
 }
 
 .inner-card {
@@ -369,6 +379,8 @@ textarea {
 }
 
 .tabs {
+  position: relative;
+  z-index: 6;
   display: flex;
   gap: 0.6rem;
   flex-wrap: wrap;
@@ -386,9 +398,25 @@ textarea {
   cursor: pointer;
 }
 
+.tab-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
 .tab.is-active {
   background: rgba(92, 99, 255, 0.14);
   border-color: var(--line-strong);
+}
+
+.tab-help .field-help-popover {
+  left: auto;
+  right: 0;
 }
 
 .field {
@@ -417,6 +445,13 @@ textarea {
 .field-help {
   position: relative;
   display: inline-flex;
+  isolation: isolate;
+  z-index: 7;
+}
+
+.field-help:hover,
+.field-help:focus-within {
+  z-index: 80;
 }
 
 .field-help-trigger {
@@ -430,21 +465,23 @@ textarea {
   background: rgba(92, 99, 255, 0.12);
   color: var(--primary-strong);
   cursor: help;
+  transition: opacity 140ms ease;
 }
 
 .field-help-popover {
   position: absolute;
   left: 0;
   top: calc(100% + 0.55rem);
-  z-index: 25;
+  z-index: 81;
   display: grid;
   gap: 0.45rem;
   width: min(19rem, 78vw);
   padding: 0.85rem 0.95rem;
   border: 1px solid var(--line-strong);
   border-radius: 16px;
-  background: rgba(31, 37, 82, 0.98);
+  background: #1f2552;
   box-shadow: var(--shadow);
+  backdrop-filter: none;
   color: #f5f7ff;
   opacity: 0;
   pointer-events: none;
@@ -468,6 +505,11 @@ textarea {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+.field-help:hover .field-help-trigger,
+.field-help:focus-within .field-help-trigger {
+  opacity: 0;
 }
 
 .input,
@@ -754,6 +796,14 @@ textarea {
 .docs-section-card.is-highlighted {
   border-color: rgba(92, 99, 255, 0.36);
   box-shadow: 0 24px 60px rgba(92, 99, 255, 0.18);
+}
+
+.docs-section-anchor,
+.docs-section,
+.docs-field-card,
+.field,
+.checkbox {
+  scroll-margin-top: 1rem;
 }
 
 .docs-section {

@@ -56,7 +56,7 @@ export function DashboardPage() {
 
     const timer = window.setTimeout(() => {
       const fieldAnchor = activeFieldKey ? getFieldDoc(activeFieldKey)?.anchorId : null;
-      const targetId = fieldAnchor ?? activeSectionId;
+      const targetId = fieldAnchor ?? `${activeSectionId}-top`;
       document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 80);
 
@@ -138,15 +138,15 @@ export function DashboardPage() {
 
             <nav className="docs-toc">
               {filteredSections.map((section, index) => (
-                <a
+                <Link
                   key={section.id}
-                  href={`#${section.id}`}
+                  to={`/?section=${encodeURIComponent(section.id)}${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ''}`}
                   className={`docs-toc-link ${activeSectionId === section.id ? 'is-active' : ''}`}
                 >
                   <span>{String(index + 1).padStart(2, '0')}</span>
                   <strong>{section.title}</strong>
                   <small>{section.summary}</small>
-                </a>
+                </Link>
               ))}
             </nav>
           </div>
@@ -165,13 +165,13 @@ export function DashboardPage() {
           </Card>
 
           {filteredSections.map((section) => (
-            <Card
-              key={section.id}
-              title={section.title}
-              description={section.summary}
-              className={`docs-section-card ${activeSectionId === section.id ? 'is-highlighted' : ''}`}
-            >
-              <section id={section.id} className="docs-section">
+            <div key={section.id} id={`${section.id}-top`} className="docs-section-anchor">
+              <Card
+                title={section.title}
+                description={section.summary}
+                className={`docs-section-card ${activeSectionId === section.id ? 'is-highlighted' : ''}`}
+              >
+                <section id={section.id} className="docs-section">
                 <div className="stack-list compact">
                   {section.description.map((paragraph) => (
                     <p key={paragraph}>{paragraph}</p>
@@ -259,8 +259,9 @@ export function DashboardPage() {
                     </div>
                   </div>
                 )}
-              </section>
-            </Card>
+                </section>
+              </Card>
+            </div>
           ))}
         </div>
       </div>

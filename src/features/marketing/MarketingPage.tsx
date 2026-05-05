@@ -30,15 +30,47 @@ export function MarketingPage() {
 
   return (
     <div className="page-stack">
-      <Card title="Маркетинг и SEO" description="Отдельный слой для витрин, SEO-страниц и правил поиска.">
+      <Card className="tabs-shell-card" title="Маркетинг и SEO" description="Отдельный слой для витрин, SEO-страниц и правил поиска.">
         <Tabs
           activeId={tab}
           onChange={(value) => setTab(value as MarketingTab)}
           items={[
-            { id: 'collections', label: 'Подборки' },
-            { id: 'seo', label: 'SEO pages' },
-            { id: 'synonyms', label: 'Search synonyms' },
-            { id: 'redirects', label: 'Search redirects' },
+            {
+              id: 'collections',
+              label: 'Подборки',
+              help: {
+                short: 'Подборки создают ручные и сезонные витрины, где состав и порядок товаров управляются отдельно от категорий.',
+                sectionId: 'marketing',
+                linkLabel: 'Читать про подборки',
+              },
+            },
+            {
+              id: 'seo',
+              label: 'SEO pages',
+              help: {
+                short: 'SEO-страницы создают отдельные поисковые входы под категории, бренды, подборки и фильтры.',
+                sectionId: 'seo-search',
+                linkLabel: 'Читать про SEO-страницы',
+              },
+            },
+            {
+              id: 'synonyms',
+              label: 'Search synonyms',
+              help: {
+                short: 'Синонимы помогают поиску понимать разные формулировки одного и того же намерения пользователя.',
+                sectionId: 'seo-search',
+                linkLabel: 'Читать про поиск и синонимы',
+              },
+            },
+            {
+              id: 'redirects',
+              label: 'Search redirects',
+              help: {
+                short: 'Редиректы по поисковым запросам сразу ведут пользователя на нужную страницу вместо обычной выдачи.',
+                sectionId: 'seo-search',
+                linkLabel: 'Читать про поисковые редиректы',
+              },
+            },
           ]}
         />
       </Card>

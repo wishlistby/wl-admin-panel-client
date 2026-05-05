@@ -272,6 +272,7 @@ export function ProductsPage() {
 
       <div className="page-stack">
         <Card
+          className="tabs-shell-card"
           title={state.product.name || 'Новая карточка товара'}
           description="Одна форма управляет карточкой, SKU, ценами, остатками, медиа и маркетинговыми связями."
           actions={
@@ -300,10 +301,43 @@ export function ProductsPage() {
             activeId={tab}
             onChange={(value) => setTab(value as ProductTab)}
             items={[
-              { id: 'overview', label: 'Карточка' },
-              { id: 'content', label: 'Контент и цены' },
-              { id: 'variants', label: 'SKU и остатки', count: state.variants.length },
-              { id: 'marketing', label: 'Маркетинг' },
+              {
+                id: 'overview',
+                label: 'Карточка',
+                help: {
+                  short: 'Раздел для общей карточки товара: тип, бренд, категория, описания, статус и видимость.',
+                  sectionId: 'product-card',
+                  linkLabel: 'Читать про карточку товара',
+                },
+              },
+              {
+                id: 'content',
+                label: 'Контент и цены',
+                help: {
+                  short: 'Здесь живут общие атрибуты, медиа и прайс-листовые цены, которые дополняют товарный каркас.',
+                  sectionId: 'pricing',
+                  linkLabel: 'Читать про цены и контент',
+                },
+              },
+              {
+                id: 'variants',
+                label: 'SKU и остатки',
+                count: state.variants.length,
+                help: {
+                  short: 'Раздел для конкретных вариантов товара: SKU, variant-атрибуты, доступность, склад и логистика.',
+                  sectionId: 'inventory',
+                  linkLabel: 'Читать про SKU и склад',
+                },
+              },
+              {
+                id: 'marketing',
+                label: 'Маркетинг',
+                help: {
+                  short: 'Подборки, теги и связи товаров помогают продвигать карточку и управлять витринными сценариями.',
+                  sectionId: 'marketing',
+                  linkLabel: 'Читать про маркетинг',
+                },
+              },
             ]}
           />
         </Card>

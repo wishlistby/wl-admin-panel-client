@@ -14,7 +14,7 @@ export function AdminLayout() {
 
     const targetId = location.hash.slice(1);
     const timer = window.setTimeout(() => {
-      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 80);
 
     return () => window.clearTimeout(timer);

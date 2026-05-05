@@ -13,8 +13,15 @@ const queryClient = new QueryClient({
   }),
   mutationCache: new MutationCache({
     onError: (error) => {
+      const title =
+        error instanceof HttpError && error.code === 'catalog.priceList.inUse'
+          ? 'Нельзя удалить прайс-лист'
+          : error instanceof HttpError && error.details.length > 0
+            ? 'Проверьте обязательные поля'
+            : 'Не удалось выполнить действие';
+
       pushErrorNotification(
-        error instanceof HttpError && error.details.length > 0 ? 'Проверьте обязательные поля' : 'Не удалось выполнить действие',
+        title,
         toUserMessage(error),
       );
     },

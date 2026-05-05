@@ -19,14 +19,39 @@ export function StructurePage() {
   return (
     <div className="page-stack">
       <Card
+        className="tabs-shell-card"
         title="Структура каталога"
         description="Здесь администратор управляет деревом каталога, типами товаров и моделью характеристик."
       >
         <Tabs
           items={[
-            { id: 'categories', label: 'Категории' },
-            { id: 'productTypes', label: 'Типы товаров' },
-            { id: 'attributes', label: 'Атрибуты' },
+            {
+              id: 'categories',
+              label: 'Категории',
+              help: {
+                short: 'Категория задаёт дерево каталога, навигацию, фильтры, хлебные крошки и SEO-контекст раздела.',
+                sectionId: 'categories',
+                linkLabel: 'Читать про категории',
+              },
+            },
+            {
+              id: 'productTypes',
+              label: 'Типы товаров',
+              help: {
+                short: 'Тип товара определяет схему характеристик и подсказывает, какие атрибуты должны быть у семейства товаров.',
+                sectionId: 'product-types',
+                linkLabel: 'Читать про типы товаров',
+              },
+            },
+            {
+              id: 'attributes',
+              label: 'Атрибуты',
+              help: {
+                short: 'Атрибуты и их значения описывают характеристики товара, фильтры и различия между карточкой и SKU.',
+                sectionId: 'attribute-values',
+                linkLabel: 'Читать про атрибуты и значения',
+              },
+            },
           ]}
           activeId={tab}
           onChange={(value) => setTab(value as StructureTab)}
