@@ -214,6 +214,8 @@ export interface Product extends BaseEntity {
   status: ProductStatus;
   visibility: ProductVisibility;
   externalId?: string | null;
+  isHot: boolean;
+  priority: number;
 }
 
 export interface ProductCategory extends BaseEntity {
@@ -257,6 +259,19 @@ export interface ProductPrice extends BaseEntity {
   validTo?: string | null;
 }
 
+export interface ProductOffer extends BaseEntity {
+  productId: Guid;
+  productVariantId?: Guid | null;
+  shopId?: Guid | null;
+  shop: string;
+  shopUrl?: string | null;
+  price: number;
+  oldPrice?: number | null;
+  currency: string;
+  isHot: boolean;
+  priority: number;
+}
+
 export interface ProductMedia extends BaseEntity {
   productId: Guid;
   productVariantId?: Guid | null;
@@ -274,7 +289,7 @@ export interface ProductVariant extends BaseEntity {
   barcode?: string | null;
   name: string;
   slug?: string | null;
-  price: number;
+  price?: number | null;
   oldPrice?: number | null;
   currency: string;
   stockQuantity: number;
@@ -351,6 +366,8 @@ export interface CatalogProductListItem {
   status: ProductStatus;
   visibility: ProductVisibility;
   isActive: boolean;
+  isHot: boolean;
+  priority: number;
   variantCount: number;
   minPrice?: number | null;
   maxPrice?: number | null;
@@ -374,6 +391,7 @@ export interface CatalogProductEditor {
   tags: ProductTag[];
   collections: ProductCollectionItem[];
   relations: ProductRelation[];
+  offers: ProductOffer[];
   variants: CatalogProductVariant[];
 }
 
@@ -388,26 +406,11 @@ export interface PartnerProduct {
   url?: string | null;
   photoUrl?: string | null;
   price: number;
+  oldPrice?: number | null;
   currency?: string | null;
   description?: string | null;
   shop?: string | null;
+  shopUrl?: string | null;
   shopId?: Guid | null;
   isActive: boolean;
-}
-
-export interface PartnerProductMutationRequest {
-  name?: string | null;
-  url?: string | null;
-  photoUrl?: string | null;
-  price: number;
-  currency?: string | null;
-  description?: string | null;
-  shop?: string | null;
-  shopId?: Guid | null;
-  partner?: string | null;
-  partnerId?: Guid | null;
-  isActive: boolean;
-  isHot: boolean;
-  startDate: string;
-  endDate?: string | null;
 }

@@ -68,6 +68,23 @@ type ProductPriceDraft = {
   lastUpdate?: string;
 };
 
+type ProductOfferDraft = {
+  id?: string;
+  productId?: string;
+  productVariantId?: string | null;
+  shopId?: string | null;
+  shop: string;
+  shopUrl?: string | null;
+  price: number;
+  oldPrice?: number | null;
+  currency: string;
+  isHot: boolean;
+  priority: number;
+  isActive: boolean;
+  startDate?: string;
+  lastUpdate?: string;
+};
+
 type ProductTagDraft = {
   id?: string;
   tagId: string;
@@ -136,12 +153,15 @@ type EditorState = {
     status: string;
     visibility: string;
     externalId: string;
+    isHot: boolean;
+    priority: number;
     isActive: boolean;
   };
   categories: Array<{ id: string; catalogCategoryId: string; isPrimary: boolean; sortOrder: number; isActive: boolean }>;
   productAttributes: ProductAttributeDraft[];
   productMedia: ProductMediaDraft[];
   productPrices: ProductPriceDraft[];
+  offers: ProductOfferDraft[];
   tags: ProductTagDraft[];
   collections: ProductCollectionDraft[];
   relations: ProductRelationDraft[];
@@ -472,6 +492,13 @@ export function ProductsPage() {
                 items={state.productPrices}
                 onChange={(items) => setState((prev) => ({ ...prev, productPrices: items }))}
                 priceLists={bootstrapQuery.data?.priceLists ?? []}
+              />
+            </Card>
+            <Card title="Предложения магазинов" description="Один товар может продаваться в нескольких магазинах с разной ценой, ссылкой и приоритетом.">
+              <OfferEditor
+                items={state.offers}
+                variants={state.variants}
+                onChange={(items) => setState((prev) => ({ ...prev, offers: items }))}
               />
             </Card>
           </div>
@@ -867,6 +894,88 @@ function PriceEditor({
   );
 }
 
+function OfferEditor({
+  items,
+  variants,
+  onChange,
+}: {
+  items: ProductOfferDraft[];
+  variants: ProductVariantDraft[];
+  onChange: (items: ProductOfferDraft[]) => void;
+}) {
+  return (
+    <div className="stack-list compact">
+      {items.map((item, index) => (
+        <div key={item.id || index} className="matrix-row">
+          <SelectField
+            docKey="offer-sku"
+            label="SKU"
+            value={item.productVariantId ?? ''}
+            onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, productVariantId: event.target.value || null } : entry)))}
+            options={[
+              { value: '', label: 'Вся карточка' },
+              ...variants.map((variant, variantIndex) => ({
+                value: variant.id ?? '',
+                label: variant.sku || variant.name || `SKU ${variantIndex + 1}`,
+              })).filter((option) => option.value),
+            ]}
+          />
+          <TextField
+            docKey="offer-shop"
+            required
+            label="Магазин"
+            value={item.shop}
+            onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, shop: event.target.value } : entry)))}
+          />
+          <TextField
+            docKey="offer-shop-url"
+            label="Ссылка магазина"
+            value={item.shopUrl ?? ''}
+            onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, shopUrl: event.target.value } : entry)))}
+          />
+          <TextField
+            docKey="offer-price"
+            required
+            label="Цена"
+            type="number"
+            value={String(item.price)}
+            onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, price: Number(event.target.value) || 0 } : entry)))}
+          />
+          <TextField
+            docKey="offer-old-price"
+            label="Старая цена"
+            type="number"
+            value={String(item.oldPrice ?? '')}
+            onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, oldPrice: Number(event.target.value) || null } : entry)))}
+          />
+          <TextField
+            docKey="offer-currency"
+            required
+            label="Валюта"
+            value={item.currency}
+            onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, currency: event.target.value.toUpperCase() } : entry)))}
+          />
+          <TextField
+            docKey="offer-priority"
+            label="Приоритет"
+            type="number"
+            value={String(item.priority)}
+            onChange={(event) => onChange(items.map((entry, current) => (current === index ? { ...entry, priority: Number(event.target.value) || 0 } : entry)))}
+          />
+          <CheckboxField docKey="offer-hot" label="В публичной выдаче" checked={item.isHot} onChange={(value) => onChange(items.map((entry, current) => (current === index ? { ...entry, isHot: value } : entry)))} />
+          <CheckboxField docKey="offer-active" label="Активно" checked={item.isActive} onChange={(value) => onChange(items.map((entry, current) => (current === index ? { ...entry, isActive: value } : entry)))} />
+          <Button variant="danger" onClick={() => onChange(items.filter((_, current) => current !== index))}>
+            <Trash2 size={16} />
+          </Button>
+        </div>
+      ))}
+      <Button variant="secondary" onClick={() => onChange([...items, createEmptyOfferState()])}>
+        Добавить предложение магазина
+      </Button>
+    </div>
+  );
+}
+
 function InventoryEditor({
   items,
   onChange,
@@ -914,12 +1023,15 @@ function createEmptyProductState() {
       status: 'Draft',
       visibility: 'Visible',
       externalId: '',
+      isHot: false,
+      priority: 0,
       isActive: true,
     },
     categories: [] as Array<{ id: string; catalogCategoryId: string; isPrimary: boolean; sortOrder: number; isActive: boolean }>,
     productAttributes: [] as ProductAttributeDraft[],
     productMedia: [] as ProductMediaDraft[],
     productPrices: [] as ProductPriceDraft[],
+    offers: [] as ProductOfferDraft[],
     tags: [] as ProductTagDraft[],
     collections: [] as ProductCollectionDraft[],
     relations: [] as ProductRelationDraft[],
@@ -940,6 +1052,8 @@ function mapEditorToState(editor: CatalogProductEditor): EditorState {
       status: productStatusEnum.fromApi(editor.product.status),
       visibility: productVisibilityEnum.fromApi(editor.product.visibility),
       externalId: editor.product.externalId ?? '',
+      isHot: editor.product.isHot ?? false,
+      priority: editor.product.priority ?? 0,
       isActive: editor.product.isActive,
     },
     categories: editor.categories.map((item) => ({
@@ -957,6 +1071,7 @@ function mapEditorToState(editor: CatalogProductEditor): EditorState {
       mediaType: mediaTypeEnum.fromApi(media.mediaType),
     })) as ProductMediaDraft[],
     productPrices: editor.productPrices.map((item) => ({ ...item })) as ProductPriceDraft[],
+    offers: (editor.offers ?? []).map((item) => ({ ...item })) as ProductOfferDraft[],
     tags: editor.tags.map((item) => ({ ...item })) as ProductTagDraft[],
     collections: editor.collections.map((item) => ({
       id: item.id,
@@ -982,6 +1097,8 @@ function mapEditorToState(editor: CatalogProductEditor): EditorState {
 }
 
 function toSaveRequest(state: EditorState) {
+  const validVariantIds = new Set(state.variants.map((item) => item.id).filter((id): id is string => Boolean(id)));
+
   return {
     product: {
       productTypeId: state.product.productTypeId,
@@ -994,6 +1111,8 @@ function toSaveRequest(state: EditorState) {
       status: state.product.status,
       visibility: state.product.visibility,
       externalId: state.product.externalId || null,
+      isHot: state.product.isHot,
+      priority: Number(state.product.priority) || 0,
       isActive: state.product.isActive,
     },
     categories: state.categories.map((item) => ({
@@ -1006,6 +1125,7 @@ function toSaveRequest(state: EditorState) {
     productAttributes: state.productAttributes.map(cleanAttribute).filter(isPresent),
     productMedia: state.productMedia.map(cleanMedia).filter(isPresent),
     productPrices: state.productPrices.map(cleanPrice).filter(isPresent),
+    offers: state.offers.map((item) => cleanOffer(item, validVariantIds)).filter(isPresent),
     tags: state.tags.map((item) => ({ id: item.id, tagId: item.tagId, isActive: item.isActive })),
     collections: state.collections.filter(hasCollectionValue).map((item) => ({
       id: item.id,
@@ -1099,6 +1219,26 @@ function cleanPrice(item: ProductPriceDraft) {
   };
 }
 
+function cleanOffer(item: ProductOfferDraft, validVariantIds: Set<string>) {
+  if (!hasOfferValue(item)) {
+    return null;
+  }
+
+  return {
+    id: item.id || undefined,
+    productVariantId: item.productVariantId && validVariantIds.has(item.productVariantId) ? item.productVariantId : null,
+    shopId: item.shopId || null,
+    shop: item.shop.trim(),
+    shopUrl: item.shopUrl?.trim() || null,
+    price: Number(item.price) || 0,
+    oldPrice: item.oldPrice || null,
+    currency: item.currency.trim().toUpperCase(),
+    isHot: item.isHot,
+    priority: Number(item.priority) || 0,
+    isActive: item.isActive,
+  };
+}
+
 function cleanInventoryStock(item: InventoryStockDraft) {
   if (!hasInventoryValue(item)) {
     return null;
@@ -1139,6 +1279,24 @@ function createEmptyVariantState() {
     inventoryStocks: [],
     prices: [],
     media: [],
+  };
+}
+
+function createEmptyOfferState(): ProductOfferDraft {
+  return {
+    id: crypto.randomUUID(),
+    productVariantId: null,
+    shopId: null,
+    shop: '',
+    shopUrl: '',
+    price: 0,
+    oldPrice: null,
+    currency: 'RUB',
+    isHot: true,
+    priority: 0,
+    isActive: true,
+    startDate: '',
+    lastUpdate: '',
   };
 }
 
@@ -1274,6 +1432,33 @@ function validateProductState(state: EditorState) {
     }
   });
 
+  state.offers.forEach((offer, index) => {
+    if (!hasOfferValue(offer)) {
+      return;
+    }
+
+    if (!offer.shop.trim()) {
+      errors.push({
+        field: `Offers[${index}].Shop`,
+        message: `Укажите магазин для предложения #${index + 1}.`,
+      });
+    }
+
+    if (!offer.currency.trim()) {
+      errors.push({
+        field: `Offers[${index}].Currency`,
+        message: `Укажите валюту для предложения #${index + 1}.`,
+      });
+    }
+
+    if (Number(offer.price) <= 0) {
+      errors.push({
+        field: `Offers[${index}].Price`,
+        message: `Укажите цену больше нуля для предложения #${index + 1}.`,
+      });
+    }
+  });
+
   state.productMedia.forEach((media, index) => {
     if (!hasMediaValue(media)) {
       return;
@@ -1330,6 +1515,17 @@ function hasAttributeValue(item: ProductAttributeDraft) {
 
 function hasPriceValue(item: ProductPriceDraft) {
   return Boolean(item.priceListId || item.price !== 0 || item.oldPrice !== null || item.validFrom || item.validTo);
+}
+
+function hasOfferValue(item: ProductOfferDraft) {
+  return Boolean(
+    item.shop.trim() ||
+      (item.shopUrl && item.shopUrl.trim()) ||
+      item.productVariantId ||
+      item.price !== 0 ||
+      item.oldPrice !== null ||
+      item.priority !== 0,
+  );
 }
 
 function hasInventoryValue(item: InventoryStockDraft) {
