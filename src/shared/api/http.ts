@@ -1,6 +1,7 @@
 import { env } from '@/shared/config/env';
 import type { ApiResponse } from '@/shared/api/types';
 import { HttpError, type HttpErrorDetails } from '@/shared/api/http-error';
+import { getAccessToken } from '@/shared/auth/session';
 
 function extractValidationDetails(source: unknown): HttpErrorDetails[] {
   if (!source) {
@@ -63,22 +64,43 @@ function extractValidationDetails(source: unknown): HttpErrorDetails[] {
 }
 
 async function readPayload(response: Response) {
-  const raw = await response.text();
-  if (!raw) {
-    return null;
-  }
+	const raw = await response.text();
+	if (!raw) {
+		return null;
+	}
 
-  try {
-    return JSON.parse(raw) as ApiResponse<unknown> | Record<string, unknown>;
-  } catch {
-    return raw;
-  }
+	try {
+		return normalizeObjectKeys(JSON.parse(raw)) as ApiResponse<unknown> | Record<string, unknown>;
+	} catch {
+		return raw;
+	}
+}
+
+function normalizeObjectKeys(value: unknown): unknown {
+	if (Array.isArray(value)) {
+		return value.map(normalizeObjectKeys);
+	}
+
+	if (typeof value !== 'object' || value === null) {
+		return value;
+	}
+
+	return Object.fromEntries(
+		Object.entries(value as Record<string, unknown>).map(([key, nestedValue]) => [
+			normalizeKey(key),
+			normalizeObjectKeys(nestedValue),
+		]),
+	);
+}
+
+function normalizeKey(key: string) {
+	return /^[A-Z]/.test(key) ? `${key.charAt(0).toLowerCase()}${key.slice(1)}` : key;
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
-  if (response.status === 204) {
-    return undefined as T;
-  }
+	if (response.status === 204) {
+		return undefined as T;
+	}
 
   const payload = await readPayload(response);
   const apiPayload = typeof payload === 'object' && payload !== null ? (payload as ApiResponse<T>) : null;
@@ -97,34 +119,40 @@ async function parseResponse<T>(response: Response): Promise<T> {
       (typeof payload === 'object' && payload !== null && 'errors' in payload ? (payload as { errors?: unknown }).errors : null),
   );
 
-  if (!response.ok || apiPayload?.error) {
-    throw new HttpError(
-      apiPayload?.error?.description ??
-        fallbackError ??
-        (validationDetails.length > 0 ? 'Пожалуйста, исправьте данные формы и попробуйте ещё раз.' : `Request failed with status ${response.status}`),
+	if (!response.ok || apiPayload?.error) {
+		throw new HttpError(
+			apiPayload?.error?.description ??
+				fallbackError ??
+				(validationDetails.length > 0 ? 'Пожалуйста, исправьте данные формы и попробуйте ещё раз.' : `Request failed with status ${response.status}`),
       {
         status: response.status,
         code: apiPayload?.error?.code,
         details: validationDetails,
       },
-    );
-  }
+		);
+	}
 
-  return apiPayload?.data as T;
+	return apiPayload?.data as T;
 }
 
 export async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers);
-  const hasBody = init?.body !== undefined && init?.body !== null;
+	const headers = new Headers(init?.headers);
+	const hasBody = init?.body !== undefined && init?.body !== null;
+	const accessToken = getAccessToken();
+	const url = /^https?:\/\//i.test(path) ? path : `${env.webshopApiBaseUrl}${path}`;
 
   if (hasBody && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${env.apiBaseUrl}${path}`, {
-    headers,
-    ...init,
-  });
+  if (accessToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+
+	const response = await fetch(url, {
+		headers,
+		...init,
+	});
 
   return parseResponse<T>(response);
 }

@@ -203,11 +203,35 @@ function CategoryStudio() {
         await structureApi.categories.replaceAttributes(id, form.attributes);
       }
     },
+    meta: {
+      successTitle: selected?.id ? 'Категория обновлена' : 'Категория создана',
+      successMessage: 'Дерево категорий и атрибуты категории успешно сохранены.',
+      errorTitle: 'Не удалось сохранить категорию',
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['categories-tree'] });
       if (selected?.id) {
         await queryClient.invalidateQueries({ queryKey: ['category-detail', selected.id] });
       }
+    },
+  });
+
+  const deleteCategory = useMutation({
+    mutationFn: async () => {
+      if (!selected?.id) {
+        return;
+      }
+
+      await structureApi.categories.remove(selected.id);
+    },
+    meta: {
+      successTitle: 'Категория удалена',
+      successMessage: 'Категория и связанные настройки удалены из структуры каталога.',
+      errorTitle: 'Не удалось удалить категорию',
+    },
+    onSuccess: async () => {
+      setSelectedId('');
+      await queryClient.invalidateQueries({ queryKey: ['categories-tree'] });
     },
   });
 
@@ -282,14 +306,10 @@ function CategoryStudio() {
           selected?.id ? (
             <Button
               variant="danger"
-              onClick={() =>
-                structureApi.categories.remove(selected.id).then(async () => {
-                  setSelectedId('');
-                  await queryClient.invalidateQueries({ queryKey: ['categories-tree'] });
-                })
-              }
+              onClick={() => deleteCategory.mutate()}
+              disabled={deleteCategory.isPending}
             >
-              Удалить
+              {deleteCategory.isPending ? 'Удаляем...' : 'Удалить'}
             </Button>
           ) : null
         }
@@ -531,9 +551,35 @@ function ProductTypeStudio() {
 
       await structureApi.productTypes.replaceAttributes(targetId, form.attributes);
     },
+    meta: {
+      successTitle: selectedId ? 'Тип товара обновлён' : 'Тип товара создан',
+      successMessage: 'Тип товара и набор его атрибутов успешно сохранены.',
+      errorTitle: 'Не удалось сохранить тип товара',
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['product-types-list'] });
       await queryClient.invalidateQueries({ queryKey: ['product-type-detail', selectedId] });
+    },
+  });
+
+  const deleteProductType = useMutation({
+    mutationFn: async () => {
+      if (!selectedId) {
+        return;
+      }
+
+      await structureApi.productTypes.remove(selectedId);
+    },
+    meta: {
+      successTitle: 'Тип товара удалён',
+      successMessage: 'Тип товара удалён из структуры каталога.',
+      errorTitle: 'Не удалось удалить тип товара',
+    },
+    onSuccess: async () => {
+      skipDetailHydrationRef.current = false;
+      setSelectedId('');
+      setForm({ name: '', slug: '', description: '', isActive: true, attributes: [] });
+      await queryClient.invalidateQueries({ queryKey: ['product-types-list'] });
     },
   });
 
@@ -594,16 +640,10 @@ function ProductTypeStudio() {
           <div className="dialog-actions">
             <Button
               variant="danger"
-              onClick={() =>
-                structureApi.productTypes.remove(selectedId).then(async () => {
-                  skipDetailHydrationRef.current = false;
-                  setSelectedId('');
-                  setForm({ name: '', slug: '', description: '', isActive: true, attributes: [] });
-                  await queryClient.invalidateQueries({ queryKey: ['product-types-list'] });
-                })
-              }
+              onClick={() => deleteProductType.mutate()}
+              disabled={deleteProductType.isPending}
             >
-              Удалить тип
+              {deleteProductType.isPending ? 'Удаляем...' : 'Удалить тип'}
             </Button>
           </div>
         )}
@@ -803,6 +843,11 @@ function AttributeStudio() {
 
       return structureApi.attributeGroups.create(groupForm);
     },
+    meta: {
+      successTitle: selectedGroupId ? 'Группа атрибутов обновлена' : 'Группа атрибутов создана',
+      successMessage: 'Группа атрибутов успешно сохранена.',
+      errorTitle: 'Не удалось сохранить группу атрибутов',
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['attribute-groups-list'] });
       if (selectedGroupId) await queryClient.invalidateQueries({ queryKey: ['attribute-group-detail', selectedGroupId] });
@@ -837,10 +882,56 @@ function AttributeStudio() {
 
       await structureApi.attributeDefinitions.replaceOptions(targetId, definitionForm.options);
     },
+    meta: {
+      successTitle: selectedDefinitionId ? 'Атрибут обновлён' : 'Атрибут создан',
+      successMessage: 'Определение атрибута и его значения успешно сохранены.',
+      errorTitle: 'Не удалось сохранить атрибут',
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['attribute-definitions-list'] });
       await queryClient.invalidateQueries({ queryKey: ['attribute-group-detail', selectedGroupId] });
       if (selectedDefinitionId) await queryClient.invalidateQueries({ queryKey: ['attribute-definition-detail', selectedDefinitionId] });
+    },
+  });
+
+  const deleteGroup = useMutation({
+    mutationFn: async () => {
+      if (!selectedGroupId) {
+        return;
+      }
+
+      await structureApi.attributeGroups.remove(selectedGroupId);
+    },
+    meta: {
+      successTitle: 'Группа атрибутов удалена',
+      successMessage: 'Группа атрибутов удалена из модели каталога.',
+      errorTitle: 'Не удалось удалить группу атрибутов',
+    },
+    onSuccess: async () => {
+      setSelectedGroupId('');
+      setSelectedDefinitionId('');
+      setGroupForm({ name: '', slug: '', description: '', sortOrder: 0, isActive: true });
+      await queryClient.invalidateQueries({ queryKey: ['attribute-groups-list'] });
+    },
+  });
+
+  const deleteDefinition = useMutation({
+    mutationFn: async () => {
+      if (!selectedDefinitionId) {
+        return;
+      }
+
+      await structureApi.attributeDefinitions.remove(selectedDefinitionId);
+    },
+    meta: {
+      successTitle: 'Атрибут удалён',
+      successMessage: 'Атрибут удалён из модели каталога.',
+      errorTitle: 'Не удалось удалить атрибут',
+    },
+    onSuccess: async () => {
+      setSelectedDefinitionId('');
+      await queryClient.invalidateQueries({ queryKey: ['attribute-definitions-list'] });
+      await queryClient.invalidateQueries({ queryKey: ['attribute-group-detail', selectedGroupId] });
     },
   });
 
@@ -864,16 +955,10 @@ function AttributeStudio() {
           {selectedGroupId && (
             <Button
               variant="danger"
-              onClick={() =>
-                structureApi.attributeGroups.remove(selectedGroupId).then(async () => {
-                  setSelectedGroupId('');
-                  setSelectedDefinitionId('');
-                  setGroupForm({ name: '', slug: '', description: '', sortOrder: 0, isActive: true });
-                  await queryClient.invalidateQueries({ queryKey: ['attribute-groups-list'] });
-                })
-              }
+              onClick={() => deleteGroup.mutate()}
+              disabled={deleteGroup.isPending}
             >
-              Удалить группу
+              {deleteGroup.isPending ? 'Удаляем...' : 'Удалить группу'}
             </Button>
           )}
           <Button
@@ -956,14 +1041,10 @@ function AttributeStudio() {
           <div className="dialog-actions">
             <Button
               variant="danger"
-              onClick={() =>
-                structureApi.attributeDefinitions.remove(selectedDefinitionId).then(async () => {
-                  setSelectedDefinitionId('');
-                  await queryClient.invalidateQueries({ queryKey: ['attribute-group-detail', selectedGroupId] });
-                })
-              }
+              onClick={() => deleteDefinition.mutate()}
+              disabled={deleteDefinition.isPending}
             >
-              Удалить атрибут
+              {deleteDefinition.isPending ? 'Удаляем...' : 'Удалить атрибут'}
             </Button>
           </div>
         )}

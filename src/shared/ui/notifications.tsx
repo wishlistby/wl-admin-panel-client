@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 
 export type NotificationItem = {
   id: string;
+  type: 'error' | 'success';
   title: string;
   message: string;
 };
@@ -18,9 +19,10 @@ function emit() {
   }
 }
 
-export function pushErrorNotification(title: string, message: string) {
+function pushNotification(type: NotificationItem['type'], title: string, message: string) {
   const item: NotificationItem = {
     id: crypto.randomUUID(),
+    type,
     title,
     message,
   };
@@ -32,6 +34,14 @@ export function pushErrorNotification(title: string, message: string) {
     notifications = notifications.filter((entry) => entry.id !== item.id);
     emit();
   }, 6500);
+}
+
+export function pushErrorNotification(title: string, message: string) {
+  pushNotification('error', title, message);
+}
+
+export function pushSuccessNotification(title: string, message: string) {
+  pushNotification('success', title, message);
 }
 
 export function dismissNotification(id: string) {
@@ -58,9 +68,9 @@ export function NotificationViewport() {
   return (
     <div className="notification-stack" aria-live="assertive" aria-atomic="true">
       {items.map((item) => (
-        <article key={item.id} className="notification-card notification-card-error" role="alert">
+        <article key={item.id} className={`notification-card notification-card-${item.type}`} role="alert">
           <div className="notification-icon">
-            <AlertCircle size={18} />
+            {item.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           </div>
           <div className="notification-copy">
             <strong>{item.title}</strong>

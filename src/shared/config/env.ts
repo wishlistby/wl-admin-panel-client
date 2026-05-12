@@ -1,5 +1,6 @@
 const appEnv = import.meta.env.VITE_APP_ENV ?? 'local';
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:6061').replace(/\/+$/, '');
+const webshopApiBaseUrl = (import.meta.env.WEBSHOP_API_BASE_URL ?? 'http://127.0.0.1:6061').replace(/\/+$/, '');
+const authApiBaseUrl = (import.meta.env.AUTH_API_BASE_URL ?? 'http://127.0.0.1:8181').replace(/\/+$/, '');
 
 const labels: Record<string, string> = {
   local: 'Local environment',
@@ -9,6 +10,7 @@ const labels: Record<string, string> = {
 
 export const env = {
   appEnv,
-  apiBaseUrl,
+  webshopApiBaseUrl,
+  authApiBaseUrl,
   label: labels[appEnv] ?? appEnv,
 } as const;

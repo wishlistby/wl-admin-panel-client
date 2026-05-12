@@ -259,6 +259,79 @@ export interface ProductPrice extends BaseEntity {
   validTo?: string | null;
 }
 
+export interface AdminSession {
+  userId: Guid;
+  email?: string | null;
+  userName?: string | null;
+  role: string;
+  permissions: string[];
+}
+
+export interface AdminNavigationItem {
+  path: string;
+  label: string;
+  icon: string;
+  description: string;
+}
+
+export interface AdminLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthTokenPair {
+  access_token?: string;
+  refresh_token?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  error?: string | null;
+}
+
+export interface AdminLoginResponse {
+  token: AuthTokenPair;
+  session: AdminSession;
+}
+
+export interface RoleOption {
+  name: string;
+  displayName: string;
+  description: string;
+  permissions: string[];
+}
+
+export interface PermissionOption {
+  value: string;
+  group: string;
+  name: string;
+  description: string;
+}
+
+export interface AdminManagedUser {
+  userId: Guid;
+  email?: string | null;
+  userName?: string | null;
+  role: string;
+  rolePermissions: string[];
+  directPermissions: string[];
+  effectivePermissions: string[];
+}
+
+export interface AdminAccessEditor {
+	user: AdminManagedUser;
+	availableRoles: RoleOption[];
+	availablePermissions: PermissionOption[];
+}
+
+export interface AdminAccessOptions {
+	availableRoles: RoleOption[];
+	availablePermissions: PermissionOption[];
+}
+
+export interface UpdateAdminUserAccessRequest {
+  role: string;
+  directPermissions: string[];
+}
+
 export interface ProductOffer extends BaseEntity {
   productId: Guid;
   productVariantId?: Guid | null;

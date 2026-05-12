@@ -1,19 +1,46 @@
 import type { PropsWithChildren } from 'react';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HttpError, toUserMessage } from '@/shared/api/http-error';
-import { NotificationViewport, pushErrorNotification } from '@/shared/ui/notifications';
+import { AuthProvider } from '@/shared/auth/AuthProvider';
+import { NotificationViewport, pushErrorNotification, pushSuccessNotification } from '@/shared/ui/notifications';
 
-const queryClient = new QueryClient({
+type MutationNotificationMeta = {
+  successTitle?: string;
+  successMessage?: string;
+  errorTitle?: string;
+  suppressGlobalSuccess?: boolean;
+  suppressGlobalError?: boolean;
+};
+
+function getMutationMeta(meta: unknown): MutationNotificationMeta {
+  return typeof meta === 'object' && meta !== null ? meta : {};
+}
+
+export const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error, query) => {
-      if (query.state.data !== undefined) {
-        pushErrorNotification('Не удалось обновить данные', toUserMessage(error));
-      }
+    onError: (error) => {
+      pushErrorNotification('Не удалось загрузить данные', toUserMessage(error));
     },
   }),
   mutationCache: new MutationCache({
-    onError: (error) => {
-      const title =
+    onSuccess: (_data, _variables, _context, mutation) => {
+      const meta = getMutationMeta(mutation.options.meta);
+      if (meta.suppressGlobalSuccess) {
+        return;
+      }
+
+      pushSuccessNotification(
+        meta.successTitle ?? 'Готово',
+        meta.successMessage ?? 'Операция выполнена успешно.',
+      );
+    },
+    onError: (error, _variables, _context, mutation) => {
+      const meta = getMutationMeta(mutation.options.meta);
+      if (meta.suppressGlobalError) {
+        return;
+      }
+
+      const fallbackTitle =
         error instanceof HttpError && error.code === 'catalog.priceList.inUse'
           ? 'Нельзя удалить прайс-лист'
           : error instanceof HttpError && error.code === 'catalog.product.validation'
@@ -24,6 +51,7 @@ const queryClient = new QueryClient({
           : error instanceof HttpError && error.details.length > 0
             ? 'Проверьте заполнение формы'
             : 'Не удалось выполнить действие';
+      const title = meta.errorTitle ?? fallbackTitle;
 
       pushErrorNotification(
         title,
@@ -46,8 +74,10 @@ const queryClient = new QueryClient({
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
-      <NotificationViewport />
+      <AuthProvider>
+        {children}
+        <NotificationViewport />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

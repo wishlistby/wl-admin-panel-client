@@ -215,11 +215,38 @@ export function ProductsPage() {
       setSelectedProductId(id);
       return id;
     },
+    meta: {
+      successTitle: selectedProductId ? 'Товар обновлён' : 'Товар создан',
+      successMessage: selectedProductId
+        ? 'Карточка товара и связанные данные успешно сохранены.'
+        : 'Новая карточка товара создана и открыта для дальнейшего редактирования.',
+      errorTitle: 'Не удалось сохранить товар',
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['products-list'] });
       if (selectedProductId) {
         await queryClient.invalidateQueries({ queryKey: ['product-editor', selectedProductId] });
       }
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedProductId) {
+        return;
+      }
+
+      await productsApi.remove(selectedProductId);
+    },
+    meta: {
+      successTitle: 'Товар удалён',
+      successMessage: 'Карточка товара и связанные данные удалены из каталога.',
+      errorTitle: 'Не удалось удалить товар',
+    },
+    onSuccess: async () => {
+      setSelectedProductId('');
+      setState(createEmptyProductState());
+      await queryClient.invalidateQueries({ queryKey: ['products-list'] });
     },
   });
 
@@ -310,15 +337,10 @@ export function ProductsPage() {
               {selectedProductId && (
                 <Button
                   variant="danger"
-                  onClick={() =>
-                    productsApi.remove(selectedProductId).then(async () => {
-                      setSelectedProductId('');
-                      setState(createEmptyProductState());
-                      await queryClient.invalidateQueries({ queryKey: ['products-list'] });
-                    })
-                  }
+                  onClick={() => deleteMutation.mutate()}
+                  disabled={deleteMutation.isPending}
                 >
-                  Удалить
+                  {deleteMutation.isPending ? 'Удаляем...' : 'Удалить'}
                 </Button>
               )}
               <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>

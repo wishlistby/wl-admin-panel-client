@@ -61,6 +61,11 @@ export function ResourceManager<T extends BaseEntity, TForm extends Record<strin
 
       return create(form);
     },
+    meta: {
+      successTitle: editingId ? 'Запись обновлена' : 'Запись создана',
+      successMessage: `${title}: изменения успешно сохранены.`,
+      errorTitle: `${title}: не удалось сохранить запись`,
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [queryKey] });
       setOpen(false);
@@ -71,6 +76,11 @@ export function ResourceManager<T extends BaseEntity, TForm extends Record<strin
 
   const deleteMutation = useMutation({
     mutationFn: remove,
+    meta: {
+      successTitle: 'Запись удалена',
+      successMessage: `${title}: запись успешно удалена.`,
+      errorTitle: `${title}: не удалось удалить запись`,
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [queryKey] });
     },

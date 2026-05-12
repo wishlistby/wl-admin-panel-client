@@ -17,6 +17,11 @@ export function PartnersPage() {
 
   const invalidateMutation = useMutation({
     mutationFn: partnerProductsApi.invalidateCacheRegion,
+    meta: {
+      successTitle: 'Кэш сброшен',
+      successMessage: 'Кэш партнёрских товаров успешно инвалидирован.',
+      errorTitle: 'Не удалось сбросить кэш партнёров',
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['partner-products'] });
     },
